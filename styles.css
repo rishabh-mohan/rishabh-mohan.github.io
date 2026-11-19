@@ -1,9 +1,16 @@
-@font-face {
-  font-family: 'Silkscreen';
-  src: url('assets/Silkscreen-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-display: swap;
-}
+/* Self-hosted Latin subsets, licensed under the SIL OFL (see assets/fonts/licenses). */
+@font-face { font-family: 'IBM Plex Mono'; src: url('assets/fonts/ibm-plex-mono-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('assets/fonts/ibm-plex-mono-600.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('assets/fonts/ibm-plex-mono-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Instrument Serif'; src: url('assets/fonts/instrument-serif-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Space Mono'; src: url('assets/fonts/space-mono-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Space Mono'; src: url('assets/fonts/space-mono-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Atkinson Hyperlegible Next'; src: url('assets/fonts/atkinson-hyperlegible-next.woff2') format('woff2'); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: 'Baskervville'; src: url('assets/fonts/baskervville-400.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Martian Mono'; src: url('assets/fonts/martian-mono.woff2') format('woff2'); font-weight: 100 800; font-display: swap; }
+@font-face { font-family: 'Silkscreen'; src: url('assets/fonts/silkscreen-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Cascadia Mono'; src: url('assets/fonts/cascadia-mono-700.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'Fraunces'; src: url('assets/fonts/fraunces-600.woff2') format('woff2'); font-weight: 600; font-display: swap; }
 
 :root {
   color-scheme: dark;
@@ -51,7 +58,23 @@
   --title-font: var(--display-mono);
   --title-style: normal;
 }
+:root[data-theme="snowdrift"] {
+  /* Opaque panes keep the falling snow behind the windows, never over the text. */
+  --bg: #0f1720; --pane: #16202c; --bar: #22324a; --edge: #6f87a3;
+  --text: #f2f7fc; --muted: #c3d2e0; --accent: #bfe6ff; --media: #121c27; --media-edge: #49607a;
+  --body-font: 'IBM Plex Mono', 'Courier New', monospace;
+  --title-font: 'Fraunces', Georgia, serif; --title-style: normal;
+}
+/* Fraunces is a soft display serif; it reads best a little heavier and less tightly tracked. */
+[data-theme="snowdrift"] .site-header h1 { font-weight: 600; letter-spacing: -.035em; }
+/* The scarf sits on the lower edge of the name and stays out of layout, so the header height never changes. */
+.name { position: relative; display: inline-block; }
+.scarf { display: none; }
+/* The scarf canvas hangs off the name, above the toolbar, so its front end can droop over the instructions. */
+[data-theme="snowdrift"] .scarf { display: block; position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 5; pointer-events: none; user-select: none; }
+.scarf canvas { position: absolute; display: block; }
 * { box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
 body { margin: 0; }
 [hidden] { display: none !important; }
 a { color: var(--accent); text-underline-offset: .2em; }
@@ -66,8 +89,8 @@ button {
 button:hover, button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
 button:disabled { cursor: wait; opacity: .65; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.shell { width: min(100% - 4rem, 90rem); margin: 0 auto; position: relative; }
-.site-header { padding: 1.25rem 0 .9rem; display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
+.shell { width: min(100% - 3rem, 104rem); height: 100dvh; margin: 0 auto; position: relative; display: flex; flex-direction: column; }
+.site-header { flex: none; padding: 1rem 0 .65rem; display: flex; justify-content: space-between; align-items: start; gap: 1rem; }
 .header-details { text-align: right; flex: 0 0 auto; }
 .site-header h1 {
   font-family: var(--title-font);
@@ -80,7 +103,7 @@ button:disabled { cursor: wait; opacity: .65; }
 }
 .school { font-size: clamp(1.3rem, 2.1vw, 2.15rem); letter-spacing: -.05em; margin: 0 0 .5rem; }
 nav, .toolbar, .motion { font-size: .82rem; }
-.toolbar { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 1rem; border-top: 1px solid transparent; padding: .55rem 0; color: var(--muted); }
+.toolbar { flex: none; position: relative; display: flex; justify-content: space-between; align-items: center; gap: 1rem; border-top: 1px solid transparent; padding: .55rem 0; color: var(--muted); }
 .toolbar::before, .toolbar::after {
   content: '';
   position: absolute;
@@ -133,10 +156,10 @@ nav, .toolbar, .motion { font-size: .82rem; }
 [data-theme="postmodern"] .eye-drop { visibility: visible; }
 .eye-assembly { display: block; width: 100%; height: 100%; }
 .toolbar p { margin: 0; }
-#main { --scenery-side: clamp(55px, 7.5vw, 124px); --scenery-end: clamp(62px, 10.5vh, 108px); padding-inline: var(--scenery-side); }
-#desk { position: relative; margin-block: var(--scenery-end); }
+#main { --scenery-side: clamp(55px, 7.5vw, 124px); --scenery-end: clamp(56px, 9vh, 96px); padding-inline: var(--scenery-side); flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#desk { position: relative; flex: 1; min-height: 0; margin-block: var(--scenery-end); }
 #desk:has(#expanded:not([hidden])) #grid { visibility: hidden; }
-#grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .75rem; height: clamp(320px, calc(100dvh - 13rem - 2 * var(--scenery-end)), 830px); }
+#grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: .75rem; height: 100%; }
 .window, #expanded { border: 1px solid var(--edge); background: var(--pane); box-shadow: 3px 3px 0 #070b08; min-width: 0; }
 .window { display: flex; flex-direction: column; overflow: hidden; }
 .window.selected, .window.destination { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
@@ -163,6 +186,9 @@ nav, .toolbar, .motion { font-size: .82rem; }
 .preview-details h3 { font-size: inherit; margin: .7rem 0 .25rem; }
 .preview-details ul { padding-inline-start: 1.2rem; }
 .preview p { margin: 0; color: var(--muted); font-size: .79rem; line-height: 1.38; }
+.preview p.tagline { color: var(--accent); margin: 0 0 .5rem; }
+.art a { color: inherit; text-decoration: none; }
+.art a:hover { color: var(--text); }
 .caption { display: flex; align-items: baseline; gap: .55rem; }
 .slot { color: var(--accent); font-size: .72rem; border: 1px solid var(--edge); padding: 0 .2rem; }
 .visual, .art { min-height: 0; overflow: hidden; border: 1px solid var(--media-edge); background: var(--media); display: grid; place-items: center; margin: 0; }
@@ -187,7 +213,21 @@ nav, .toolbar, .motion { font-size: .82rem; }
 .demo button { margin: .2rem .45rem .2rem 0; }
 .cursor::after { content: '▌'; color: var(--accent); }
 #forest { pointer-events: none; position: fixed; inset: 0; width: 100%; height: 100%; }
-.motion { margin: .7rem 0; background: var(--bg); }
+/* An icon-only toggle keeps the pair narrow enough to stay clear of the postmodern eye. */
+.toolbar-actions { display: flex; align-items: stretch; gap: .35rem; flex: none; }
+.motion { display: inline-grid; place-items: center; padding: 0 .5rem; }
+.motion svg { width: .8rem; height: .8rem; fill: currentColor; }
+.motion[aria-pressed="true"] .icon-pause, .motion:not([aria-pressed="true"]) .icon-play { display: none; }
+/* Holding Shuffle fills a thin bar, then opens the theme menu. */
+.shuffle-wrap { position: relative; display: flex; }
+#shuffle { position: relative; touch-action: manipulation; -webkit-touch-callout: none; user-select: none; }
+#shuffle::after { content: ''; position: absolute; left: 0; bottom: 0; height: 2px; width: 0; background: var(--accent); }
+#shuffle.holding::after { width: 100%; transition: width 450ms linear; }
+#theme-menu { position: absolute; top: calc(100% + .3rem); right: 0; z-index: 6; min-width: 100%; margin: 0; padding: .25rem; list-style: none; background: var(--bar); border: 1px solid var(--edge); box-shadow: 3px 3px 0 #070b08; }
+#theme-menu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: .3rem .6rem; white-space: nowrap; }
+#theme-menu button:hover, #theme-menu button:focus-visible { color: var(--accent); background: var(--media); outline-offset: -2px; }
+#theme-menu button[aria-disabled="true"] { color: var(--muted); cursor: default; }
+#theme-menu button[aria-checked="true"]::after { content: ' ✓'; }
 @media (prefers-reduced-motion: no-preference) {
   .toolbar::before, .toolbar::after { transition: width 280ms ease, background-color 330ms ease; }
   [data-theme="postmodern"] .eye-assembly { animation: lower-eye 900ms .14s both cubic-bezier(.25,.75,.4,1.06); }
@@ -205,7 +245,8 @@ nav, .toolbar, .motion { font-size: .82rem; }
   #main { display: none; }
   #unsupported { display: block; }
   .motion { display: none; }
-  .shell { width: calc(100% - 2.5rem); padding-top: 0; }
+  html, body { height: auto; overflow: visible; }
+  .shell { width: calc(100% - 2.5rem); height: auto; display: block; padding-top: 0; }
   #forest { display: none; }
   .site-header h1 { font-size: clamp(1.9rem, 6vw, 3.8rem); }
   .school { font-size: clamp(.8rem, 2.5vw, 1.3rem); }

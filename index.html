@@ -5,27 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rishabh Mohan</title>
   <meta name="description" content="Rishabh Mohan, Purdue CS ’30. Explore my projects in six movable windows.">
+  <meta name="theme-color" content="#101510">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://rishabh-mohan.github.io/">
+  <meta property="og:title" content="Rishabh Mohan">
+  <meta property="og:description" content="Purdue CS ’30. Explore my projects in six movable windows.">
+  <meta property="og:image" content="https://rishabh-mohan.github.io/assets/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Rishabh Mohan’s portfolio: six project windows framed by an ASCII forest">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preload" href="assets/fonts/ibm-plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/instrument-serif-italic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <script defer src="projects.js"></script>
   <script defer src="corner-art.js"></script>
   <script defer src="postmodern-eye.js"></script>
   <script defer src="postmodern-ships.js"></script>
+  <script defer src="theme-icon.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
   <canvas id="forest" aria-hidden="true"></canvas>
   <div class="shell">
     <header class="site-header">
-      <h1>Hi, I’m Rishabh</h1>
+      <h1>Hi, I’m <span class="name">Rishabh<span class="scarf" aria-hidden="true"></span></span></h1>
       <div class="header-details">
         <p class="school">Purdue CS ’30</p>
-        <nav aria-label="Social links"><a href="https://github.com/rishabh-mohan">GitHub</a><span aria-hidden="true"> ° </span><a href="https://www.linkedin.com/in/mohan-rishabh">LinkedIn</a></nav>
+        <nav aria-label="Social links"><a href="https://github.com/rishabh-mohan">GitHub</a><span aria-hidden="true"> · </span><a href="https://www.linkedin.com/in/mohan-rishabh">LinkedIn</a><span aria-hidden="true"> · </span><a href="assets/Rishabh-Mohan-Resume.pdf">Resume</a></nav>
       </div>
     </header>
     <main id="main">
       <div class="toolbar">
         <p id="instructions">Drag a grip to swap, or press two slot numbers.</p>
-        <button id="shuffle" type="button">⇄ Shuffle</button>
+        <div class="toolbar-actions">
+          <button class="motion" id="motion" type="button" aria-pressed="false" aria-label="Pause background animation" title="Pause background animation">
+            <svg class="icon-pause" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><rect x="3" y="2" width="3.5" height="12"/><rect x="9.5" y="2" width="3.5" height="12"/></svg>
+            <svg class="icon-play" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 2l10 6-10 6z"/></svg>
+          </button>
+          <div class="shuffle-wrap">
+            <button id="shuffle" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="theme-menu" title="Click to shuffle. Hold, right-click, or press Down to pick the next theme.">⇄ Shuffle</button>
+            <ul id="theme-menu" role="menu" aria-label="Next theme" hidden></ul>
+          </div>
+        </div>
         <div class="eye-drop" aria-hidden="true">
           <canvas class="eye-assembly"></canvas>
         </div>
@@ -44,7 +67,6 @@
       <p id="status" class="visually-hidden" role="status"></p>
     </main>
     <p id="unsupported">The project grid needs a wider, taller browser window. A layout for smaller screens is coming.</p>
-    <button class="motion" id="motion" type="button" aria-pressed="false">Pause background</button>
     <noscript>Enable JavaScript to explore the project windows.</noscript>
   </div>
 </body>

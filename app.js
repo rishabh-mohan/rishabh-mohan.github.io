@@ -5,6 +5,7 @@ const content = document.querySelector('#project-content');
 const detailNav = document.querySelector('#detail-nav');
 const closeButton = document.querySelector('#close');
 const shuffleButton = document.querySelector('#shuffle');
+const themeMenu = document.querySelector('#theme-menu');
 const motionButton = document.querySelector('#motion');
 const status = document.querySelector('#status');
 const eyeCanvas = document.querySelector('.eye-assembly');
@@ -28,16 +29,40 @@ function node(tag, value, className) {
   return element;
 }
 
-function projectVisual(project, section) {
-  if (section === 5) {
-    return node('pre', '   .--------------------.\n   |  [ open a link ]   |\n   \x27--------------------\x27\n         \\   ^__^\n             (oo)\\_______\n             (__)\\       )\\/\\\n                 ||----w |\n                 ||     ||', 'art');
-  }
+function linkBanner(project) {
+  const art = node('pre', '', 'art');
+  // One wrapper keeps the banner and the cow aligned as a single grid item.
+  const lines = node('span');
+  const [name, href] = project.links[0];
+  const banner = node('a', '   .--------------------.\n   |  [ open a link ]   |\n   \x27--------------------\x27');
+  banner.href = href;
+  banner.setAttribute('aria-label', name);
+  // The cow is decoration; the banner link already carries the accessible name.
+  const cow = node('span', '\n         \\   ^__^\n             (oo)\\_______\n             (__)\\       )\\/\\\n                 ||----w |\n                 ||     ||');
+  cow.setAttribute('aria-hidden', 'true');
+  lines.append(banner, cow);
+  art.append(lines);
+  return art;
+}
+
+function projectVisual(project, section, lazy = false) {
+  if (section === 5 && project.links) return linkBanner(project);
   const asset = (section === 3 && project.extra) || project.image;
-  if (!asset) return node('pre', project.art, 'art');
+  if (!asset) {
+    // Announce the diagram as one image instead of reading its punctuation aloud.
+    const art = node('pre', project.art, 'art');
+    art.setAttribute('role', 'img');
+    art.setAttribute('aria-label', project.artAlt);
+    return art;
+  }
   const frame = node('figure', '', 'visual');
   const image = node('img');
   image.src = 'assets/' + asset[0];
   image.alt = asset[1];
+  image.width = asset[2];
+  image.height = asset[3];
+  image.decoding = 'async';
+  if (lazy) image.loading = 'lazy';
   frame.append(image);
   return frame;
 }
@@ -45,10 +70,11 @@ function projectVisual(project, section) {
 function paintCard(slot) {
   const card = grid.children[slot];
   const project = projects[order[slot]];
-  const title = project.name + ' - ' + sections[slot];
+  const title = project.name + ' - ' + labelsFor(project)[slot];
   card.querySelector('h2').textContent = title;
   card.querySelector('button').setAttribute('aria-label', 'Expand ' + project.name);
   const preview = card.querySelector('.preview');
+  preview.querySelector('.tagline').textContent = project.tagline;
   preview.querySelector('.copy').textContent = project.detail[slot];
   const details = preview.querySelector('.preview-details');
   details.replaceChildren(projectVisual(project, slot));
@@ -79,7 +105,7 @@ function makeCard(slot) {
   badge.setAttribute('aria-hidden', 'true');
   const caption = node('div', '', 'caption');
   caption.append(badge, copy);
-  preview.append(caption, node('div', '', 'preview-details'));
+  preview.append(node('p', '', 'tagline'), caption, node('div', '', 'preview-details'));
   card.append(bar, preview);
 
   grip.addEventListener('dragstart', event => {
@@ -159,7 +185,7 @@ async function runSwaps(pairs, nextTheme) {
       const cards = [grid.children[from], grid.children[to]];
       cards.forEach(card => card.classList.add('destination'));
       const before = cards.map(card => card.getBoundingClientRect());
-      await Promise.all(cards.flatMap(card => Array.from(card.querySelectorAll('h2, .copy'), el => typeTo(el, '', 90))));
+      await Promise.all(cards.flatMap(card => Array.from(card.querySelectorAll('h2, .tagline, .copy'), el => typeTo(el, '', 90))));
       [order[from], order[to]] = [order[to], order[from]];
       paintCard(from);
       paintCard(to);
@@ -172,7 +198,7 @@ async function runSwaps(pairs, nextTheme) {
           { transform: 'translate(0,0)', opacity: 1 }
         ], { duration: 250, easing: 'cubic-bezier(.2,.75,.3,1)' }).finished;
       });
-      const lines = cards.flatMap(card => Array.from(card.querySelectorAll('h2, .copy')));
+      const lines = cards.flatMap(card => Array.from(card.querySelectorAll('h2, .tagline, .copy')));
       const text = lines.map(el => el.textContent);
       lines.forEach(el => { el.textContent = ''; });
       await Promise.all([...motion, ...lines.map((el, index) => typeTo(el, text[index], 280))]);
@@ -188,23 +214,23 @@ async function runSwaps(pairs, nextTheme) {
   }
 }
 
-shuffleButton.addEventListener('click', () => {
+function shuffleTo(theme) {
   const pairs = [];
   for (let index = order.length - 1; index > 0; index--) {
     const other = Math.floor(Math.random() * (index + 1));
     if (other !== index) pairs.push([index, other]);
   }
   if (!pairs.length) pairs.push([0, 1 + Math.floor(Math.random() * (order.length - 1))]);
-  void runSwaps(pairs, chooseTheme());
-});
+  void runSwaps(pairs, theme);
+}
 
 document.addEventListener('keydown', event => {
   if (event.defaultPrevented || event.repeat || !supported.matches) return;
   if (openSlot !== null) {
-    if (event.key === 'Escape') closeProject();
+    if (event.key === 'Escape') requestClose();
     return;
   }
-  if (busy || event.target.closest('input, textarea, select, [contenteditable]')) return;
+  if (busy || !themeMenu.hidden || event.target.closest('input, textarea, select, [contenteditable]')) return;
   if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || !/^[1-6]$/.test(event.key)) {
     if (selected !== null) {
       selectSlot(null);
@@ -315,8 +341,11 @@ function appendSectionExtras(target, project, section) {
   }
 }
 
-function openProject(slot) {
+const slugOf = project => project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+function openProject(slot, pushHistory = true) {
   if (openSlot !== null || busy || !supported.matches) return;
+  if (pushHistory) history.pushState({ expanded: true }, '', '#' + slugOf(projects[order[slot]]));
   selectSlot(null);
   const start = grid.children[slot].getBoundingClientRect();
   const end = desk.getBoundingClientRect();
@@ -326,7 +355,7 @@ function openProject(slot) {
   const incoming = [];
   openSlot = slot;
   document.querySelector('#expanded-title').textContent = project.name;
-  sections.forEach((label, index) => {
+  labelsFor(project).forEach((label, index) => {
     const part = node('section');
     const sectionButton = node('button', label);
     sectionButton.type = 'button';
@@ -338,7 +367,7 @@ function openProject(slot) {
     part.append(node('h3', label), paragraph);
     if (index !== slot) incoming.push([paragraph, project.detail[index]]);
     if (index === 0 || (index === slot && index !== 5) || index === 5 || (index === 3 && project.extra)) {
-      part.append(projectVisual(project, index));
+      part.append(projectVisual(project, index, index !== slot));
     }
     appendSectionExtras(part, project, index);
     content.append(part);
@@ -376,24 +405,301 @@ function closeProject() {
   drawForest(forestTime);
 }
 
-closeButton.addEventListener('click', closeProject);
+function clearProjectHash() {
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+}
+
+// Closing steps back through history when this page opened the project, so Back and × agree.
+function requestClose() {
+  if (history.state?.expanded) history.back();
+  else { closeProject(); clearProjectHash(); }
+}
+
+function syncFromHash() {
+  const index = projects.findIndex(project => slugOf(project) === location.hash.slice(1));
+  const slot = index < 0 ? null : order.indexOf(index);
+  if (openSlot !== null && openSlot !== slot) closeProject();
+  if (slot !== null && openSlot === null) openProject(slot, false);
+}
+
+closeButton.addEventListener('click', requestClose);
+window.addEventListener('popstate', syncFromHash);
 supported.addEventListener('change', event => {
-  if (!event.matches) { closeProject(); endDrag(); }
+  if (!event.matches) { closeProject(); clearProjectHash(); endDrag(); }
 });
 
 projects.forEach((_, index) => { grid.append(makeCard(index)); paintCard(index); });
+
+// Snowdrift wraps the name in a sculpted red-and-white ASCII scarf, drawn on its own canvas so every
+// stitch can be shaded like the scenery. It wraps on during the snow-in and scatters out with the scenery.
+let scarfCells = [];
+let scarfKey = '';
+let scarfShown = 0;
+let scarfLayout = null;
+const scarfShades = {
+  red: ['#5a121b', '#a02a35', '#c2343f', '#e24c57', '#ff8f94'],
+  white: ['#5d6b7c', '#8e9fb2', '#bccad8', '#e2ebf3', '#ffffff']
+};
+// Fullness ramp: sparse glyphs where the wool turns away into shadow, dense ones where it faces the light.
+// The low end avoids single-stroke glyphs like '-', which vanish at small sizes in dark red.
+const scarfRamp = ['.', ':', ';', '=', '+', '*', 'x', 'X', '%', '#', '@'];
+const knotRamp = ['.', ':', ';', 'o', 'o', 'O', 'O', '0', '&', '@', '@'];
+// Light comes from the upper left and a little in front, like the scenery.
+const scarfLight = (() => { const l = Math.hypot(.45, .6, .66); return [-.45 / l, -.6 / l, .66 / l]; })();
+
+function buildScarf() {
+  const scarf = document.querySelector('.scarf');
+  if (!scarf) return;
+  const name = scarf.parentElement;
+  const box = name.getBoundingClientRect();
+  const W = box.width;
+  const H = box.height;
+  if (!W || !H) return;
+  const size = Math.max(6, Math.min(13, parseFloat(getComputedStyle(name).fontSize) * .15));
+  const cw = size * .6;
+  const ch = size;
+  const text = document.createRange();
+  text.selectNodeContents(document.querySelector('#instructions'));
+  const words = text.getBoundingClientRect();
+  const [lx, ly, lz] = scarfLight;
+  // Lambert shading with an ambient floor, so the underside is darker but never disappears.
+  const shade = (nx, ny, nz) => {
+    const l = Math.hypot(nx, ny, nz) || 1;
+    return .2 + .8 * Math.max(0, (nx * lx + ny * ly + nz * lz) / l);
+  };
+  const cells = new Map();
+  // Each cell keeps the nearest part (highest z); within one part, the sample closest to the cell centre.
+  function put(x, y, z, light, tone, order, kind, glyph = null, opaque = true) {
+    const i = Math.round(x / cw);
+    const j = Math.round(y / ch);
+    const dist = Math.hypot(x / cw - i, y / ch - j);
+    const key = i + ',' + j;
+    const old = cells.get(key);
+    if (old && (old.z > z || (old.z === z && old.dist <= dist))) return;
+    cells.set(key, { i, j, z, dist, light: Math.max(0, Math.min(1, light)), tone, order, kind, glyph, opaque });
+  }
+  // Knit ribs: a gentle ripple every three columns, smaller than one step of the ramp, so it reads as
+  // texture instead of a checkerboard.
+  const rib = x => .03 * Math.sin(x / cw * Math.PI * 2 / 3);
+  // Stripes run along the scarf, three stitches long, continuing from the band into the ends.
+  const stripe = distance => Math.floor(distance / (cw * 3)) % 2 === 0 ? 'red' : 'white';
+  const radius = Math.max(1.5 * ch, .13 * H);
+
+  // The band is a tube across the base of the name. It sags a little, and near each end it turns away
+  // and lifts as it wraps behind the neck, so it shrinks, rotates out of the light, and darkens.
+  const x0 = -.04 * W;
+  const x1 = .94 * W;
+  for (let x = x0; x <= x1; x += cw * .3) {
+    const t = (x - x0) / (x1 - x0);
+    const k = Math.max(0, 1 - Math.min(t, 1 - t) / .1);
+    const phi = (t < .5 ? -1 : 1) * k * 1.1;
+    const r = radius * (.92 + .12 * Math.sin(Math.PI * t)) * (1 - .3 * k);
+    const cy = H * (.9 + .035 * Math.sin(Math.PI * t)) - .35 * radius * k;
+    const step = Math.min(.25, ch * .3 / r);
+    for (let a = -1; a <= 1 + 1e-6; a += step) {
+      const across = Math.max(-1, Math.min(1, a));
+      const nz0 = Math.sqrt(1 - across * across);
+      const light = shade(Math.sin(phi) * nz0, across, Math.cos(phi) * nz0) * (1 - .25 * k) + rib(x);
+      put(x, cy + across * r, 1, light, stripe(x - x0), .55 * t, 'knit');
+    }
+  }
+
+  // The knot is a lumpy ball with folds, sitting in front of the band.
+  const kx = x1 + .02 * W;
+  const ky = H * .9;
+  const krx = radius * 1.2;
+  const kry = radius * 1.05;
+  for (let y = ky - kry; y <= ky + kry; y += ch * .3) {
+    for (let x = kx - krx; x <= kx + krx; x += cw * .3) {
+      const u = (x - kx) / krx;
+      const w = (y - ky) / kry;
+      const d = u * u + w * w;
+      if (d > 1) continue;
+      const fold = .18 * Math.sin(Math.atan2(w, u) * 3 + d * 4);
+      put(x, y, 4, shade(u + fold, w - fold * .5, Math.sqrt(1 - d)), Math.abs(u + .4 * w) < .25 ? 'white' : 'red', .6, 'knot');
+    }
+  }
+
+  // Two ends droop from the knot; the front one ends over the end of the instructions line.
+  // Each end is a thick ribbon that twists: where it turns edge-on it narrows, and past the turn
+  // it shows its darker back face.
+  const bandLength = x1 - x0;
+  const midY = (words.top + words.bottom) / 2 - box.top;
+  const endX = Math.max(.5 * W, Math.min(1.35 * W, words.right - box.left - 5 * cw));
+  const endY = Math.max(ky + .5 * H, midY);
+  const drop = endY - ky;
+  const tails = [
+    { points: [[kx, ky], [kx + .14 * W, ky + .3 * H], [endX + .26 * W, endY - .4 * drop], [endX + .14 * W, endY - .25 * drop]], z: 2, width: .8, twist: 1.5, order: [.62, .9] },
+    { points: [[kx, ky], [kx + .2 * W, ky + .2 * H], [endX + .16 * W, endY - .6 * drop], [endX, endY]], z: 3, width: .9, twist: .8, order: [.64, .95] }
+  ];
+  const bezier = (p, s) => {
+    const a = 1 - s;
+    return [0, 1].map(n => a * a * a * p[0][n] + 3 * a * a * s * p[1][n] + 3 * a * s * s * p[2][n] + s * s * s * p[3][n]);
+  };
+  for (const tail of tails) {
+    const samples = [];
+    let length = 0;
+    let prev = bezier(tail.points, 0);
+    for (let n = 0; n <= 240; n++) {
+      const s = n / 240;
+      const at = bezier(tail.points, s);
+      length += Math.hypot(at[0] - prev[0], at[1] - prev[1]);
+      samples.push([s, at, length]);
+      prev = at;
+    }
+    let last = null;
+    for (let n = 1; n < samples.length; n++) {
+      const [s, [x, y], along] = samples[n];
+      const [px, py] = samples[n - 1][1];
+      const tl = Math.hypot(x - px, y - py) || 1;
+      const tx = (x - px) / tl;
+      const ty = (y - py) / tl;
+      const nxs = -ty;
+      const nys = tx;
+      const theta = tail.twist * Math.PI * s;
+      const c = Math.cos(theta);
+      const sn = Math.sin(theta);
+      const r = radius * tail.width * (1 - .15 * s) * Math.max(.4, Math.abs(c));
+      const backFace = c < 0 ? .78 : 1;
+      const nearKnot = Math.min(1, .7 + s * 3);
+      const order = tail.order[0] + (tail.order[1] - tail.order[0]) * s;
+      const step = Math.min(.25, Math.min(cw, ch) * .3 / r);
+      for (let a = -1; a <= 1 + 1e-6; a += step) {
+        const across = Math.max(-1, Math.min(1, a));
+        const nz0 = Math.sqrt(1 - across * across);
+        // Half rounded tube, half flat face tilted by the twist.
+        const nx = .5 * nxs * across + .5 * nxs * sn;
+        const ny = .5 * nys * across + .5 * nys * sn;
+        const nz = .5 * nz0 + .5 * Math.abs(c);
+        const sx = x + nxs * across * r;
+        const sy = y + nys * across * r;
+        put(sx, sy, tail.z, shade(nx, ny, nz) * backFace * nearKnot + rib(sx), stripe(bandLength + along), order, 'knit');
+      }
+      last = { x, y, nxs, nys, r, tx, ty, order };
+    }
+    // A hem row, then fringe strands that hang mostly straight down.
+    const fall = Math.hypot(last.tx * .3, last.ty * .3 + 1);
+    const dirX = last.tx * .3 / fall;
+    const dirY = (last.ty * .3 + 1) / fall;
+    for (const u of [-.9, -.6, -.3, 0, .3, .6, .9]) {
+      put(last.x + last.nxs * u * last.r + dirX * .9 * ch, last.y + last.nys * u * last.r + dirY * .9 * ch,
+        tail.z, .55 - .2 * u, 'red', Math.min(1, last.order + .01), 'hem', '=');
+    }
+    for (const u of [-.8, -.27, .27, .8]) {
+      for (let row = 2; row <= 4; row++) {
+        put(last.x + last.nxs * u * last.r + dirX * row * ch, last.y + last.nys * u * last.r + dirY * row * ch,
+          tail.z, .85 - (row - 2) * .2 - .1 * u, 'white', Math.min(1, last.order + .02 * row), 'fringe', row < 4 ? '|' : "'", false);
+      }
+    }
+  }
+
+  // Contact shadows: with light from the upper left, a nearer part darkens what sits below-right of it.
+  for (const cell of cells.values()) {
+    const over = cells.get((cell.i - 1) + ',' + (cell.j - 1));
+    if (over && over.z > cell.z) cell.light *= .7;
+  }
+
+  scarfCells = [...cells.values()]
+    .map((cell, index) => ({ ...cell, grain: hash(index, 7), dx: (hash(index, 8) - .5) * 14, dy: (hash(index, 9) - .5) * 10 }))
+    .sort((a, b) => a.z - b.z);
+  const columns = scarfCells.map(cell => cell.i);
+  const rows = scarfCells.map(cell => cell.j);
+  const minI = Math.min(...columns) - 2;
+  const maxI = Math.max(...columns) + 2;
+  const minJ = Math.min(...rows) - 2;
+  const maxJ = Math.max(...rows) + 2;
+  scarfLayout = { cw, ch, size, left: (minI - .5) * cw, top: (minJ - .5) * ch, width: (maxI - minI + 1) * cw, height: (maxJ - minJ + 1) * ch };
+  let canvas = scarf.querySelector('canvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    scarf.replaceChildren(canvas);
+  }
+  const ratio = Math.min(2, window.devicePixelRatio || 1);
+  canvas.style.left = scarfLayout.left + 'px';
+  canvas.style.top = scarfLayout.top + 'px';
+  canvas.style.width = scarfLayout.width + 'px';
+  canvas.style.height = scarfLayout.height + 'px';
+  canvas.width = Math.ceil(scarfLayout.width * ratio);
+  canvas.height = Math.ceil(scarfLayout.height * ratio);
+  scarfKey = '';
+}
+
+// Wraps on during the snow-in; scatters and dissolves on the same curve as the canvas ASCII when leaving.
+function updateScarf() {
+  if (!scarfCells.length || !scarfLayout || currentTheme !== 'snowdrift') { scarfKey = ''; return; }
+  const entering = weather.burst >= 0;
+  const wrap = entering ? smooth((weather.burst - .24) / .7) : 1;
+  const visibility = entering ? 1 : sceneVisibility;
+  // Exact values: a rounded key let the last transition frame (wrap 0.9996) stand in for wrap 1,
+  // so the fringe tips never appeared after a real snow-in.
+  const key = wrap + '|' + visibility;
+  if (key === scarfKey) return;
+  scarfKey = key;
+  const canvas = document.querySelector('.scarf canvas');
+  if (!canvas) return;
+  const { cw, ch, size, left, top, width, height } = scarfLayout;
+  const pen = canvas.getContext('2d');
+  pen.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+  pen.clearRect(0, 0, width, height);
+  pen.font = '700 ' + size + 'px "IBM Plex Mono", "Courier New", monospace';
+  pen.textAlign = 'center';
+  pen.textBaseline = 'middle';
+  const background = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  const scatter = 1 - visibility;
+  scarfShown = 0;
+  for (const cell of scarfCells) {
+    if (cell.order > wrap || cell.grain >= visibility) continue;
+    scarfShown++;
+    const x = cell.i * cw - left + cell.dx * scatter;
+    const y = cell.j * ch - top + cell.dy * scatter;
+    // Stitches are opaque, so the scarf reads as worn in front of the letters and the text below.
+    if (cell.opaque) {
+      pen.fillStyle = background;
+      pen.fillRect(x - cw / 2 - .3, y - ch / 2 - .3, cw + .6, ch + .6);
+    }
+    const ramp = cell.kind === 'knot' ? knotRamp : scarfRamp;
+    const glyph = cell.glyph ?? ramp[Math.max(1, Math.round(cell.light * (ramp.length - 1)))];
+    const tone = Math.max(cell.opaque ? 1 : 0, Math.round(cell.light * 4));
+    pen.fillStyle = scarfShades[cell.tone][tone];
+    pen.fillText(glyph, x, y);
+  }
+}
+
+// The ends aim at the instructions line, which can move without the name changing size.
+window.addEventListener('resize', () => {
+  if (currentTheme !== 'snowdrift') return;
+  buildScarf();
+  updateScarf();
+});
 
 const forest = document.querySelector('#forest');
 const context = forest.getContext('2d');
 const ramp = ' .,:;irsXAHM#@';
 const glyphWidth = 4.4;
 const glyphHeight = 6.1;
-const themes = ['forest', 'space', 'mountains', 'postmodern'];
+const themes = ['forest', 'space', 'mountains', 'postmodern', 'snowdrift'];
 let currentTheme = 'forest';
 let postmodernStartedAt = 0;
 let themeBag = [];
 let sceneVisibility = 1;
 let rebuilding = false;
+// Snowdrift weather: how much snow lies on the edges (0 bare, 1 full) and the transition overlays.
+let snowCover = 1;
+const weather = { burst: -1, melt: 0, sun: 0 };
+function resetWeather() {
+  weather.burst = -1;
+  weather.melt = 0;
+  weather.sun = 0;
+  snowCover = 1;
+}
+function smooth(t) {
+  const v = Math.max(0, Math.min(1, t));
+  return v * v * (3 - 2 * v);
+}
+function hash(i, salt) {
+  const v = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453;
+  return v - Math.floor(v);
+}
 const palettes = {
   pine: ['#233a35', '#34594c', '#51866a', '#79ae81', '#bce09b'],
   deer: ['#4b352e', '#79523c', '#b47c52', '#dfac73', '#ffe3ad'],
@@ -405,7 +711,10 @@ const palettes = {
   star: ['#372e58', '#59547c', '#8f82af', '#c2b6e2', '#f7eaff'],
   planet: ['#352c60', '#53417e', '#7e639b', '#ab92cb', '#dfcaff'],
   ice: ['#293f59', '#3d5873', '#63809c', '#9cb8cf', '#e1f1f5'],
-  shale: ['#263545', '#374c62', '#567289', '#7994a8', '#acc4cf']
+  shale: ['#263545', '#374c62', '#567289', '#7994a8', '#acc4cf'],
+  snow: ['#3b4a5c', '#61758c', '#93a8bd', '#c9d8e6', '#f6fbff'],
+  carrot: ['#5a2c14', '#8a4520', '#c2672b', '#e8904a', '#ffc08a'],
+  sun: ['#6b3d12', '#b8691d', '#f0a43a', '#ffd27a', '#fff3c4']
 };
 
 function chooseTheme() {
@@ -413,17 +722,125 @@ function chooseTheme() {
   return themeBag.splice(Math.floor(Math.random() * themeBag.length), 1)[0];
 }
 
+// A click shuffles to a random theme; holding Shuffle (or right-click, or Down arrow) opens a menu to pick one.
+const themeLabels = { forest: 'Forest', space: 'Space', mountains: 'Mountains', postmodern: 'Postmodern', snowdrift: 'Snowdrift' };
+const holdDelay = 450;
+let holdTimer = 0;
+let suppressShuffleClick = false;
+themes.forEach(theme => {
+  const item = node('button', themeLabels[theme]);
+  item.type = 'button';
+  item.tabIndex = -1;
+  item.dataset.theme = theme;
+  item.setAttribute('role', 'menuitemradio');
+  item.addEventListener('click', () => pickTheme(theme));
+  const entry = node('li');
+  entry.setAttribute('role', 'none');
+  entry.append(item);
+  themeMenu.append(entry);
+});
+const menuItems = () => Array.from(themeMenu.querySelectorAll('button'));
+const pickableItems = () => menuItems().filter(item => item.getAttribute('aria-disabled') !== 'true');
+
+function openThemeMenu() {
+  if (!themeMenu.hidden || busy || openSlot !== null || shuffleButton.disabled) return;
+  menuItems().forEach(item => {
+    const current = item.dataset.theme === currentTheme;
+    item.setAttribute('aria-checked', String(current));
+    item.setAttribute('aria-disabled', String(current));
+  });
+  themeMenu.hidden = false;
+  shuffleButton.setAttribute('aria-expanded', 'true');
+  pickableItems()[0]?.focus();
+}
+
+function closeThemeMenu(returnFocus) {
+  suppressShuffleClick = false;
+  if (themeMenu.hidden) return;
+  themeMenu.hidden = true;
+  shuffleButton.setAttribute('aria-expanded', 'false');
+  if (returnFocus) shuffleButton.focus();
+}
+
+function pickTheme(theme) {
+  if (theme === currentTheme) return;
+  closeThemeMenu(true);
+  themeBag = themeBag.filter(entry => entry !== theme);
+  shuffleTo(theme);
+}
+
+function cancelHold() {
+  clearTimeout(holdTimer);
+  holdTimer = 0;
+  shuffleButton.classList.remove('holding');
+}
+
+shuffleButton.addEventListener('pointerdown', event => {
+  if (event.button !== 0 || shuffleButton.disabled) return;
+  cancelHold();
+  suppressShuffleClick = false;
+  shuffleButton.classList.add('holding');
+  holdTimer = setTimeout(() => {
+    cancelHold();
+    suppressShuffleClick = true;
+    openThemeMenu();
+  }, holdDelay);
+});
+['pointerup', 'pointerleave', 'pointercancel'].forEach(type => shuffleButton.addEventListener(type, cancelHold));
+shuffleButton.addEventListener('contextmenu', event => {
+  event.preventDefault();
+  cancelHold();
+  openThemeMenu();
+});
+shuffleButton.addEventListener('click', () => {
+  if (suppressShuffleClick) { suppressShuffleClick = false; return; }
+  if (!themeMenu.hidden) { closeThemeMenu(false); return; }
+  shuffleTo(chooseTheme());
+});
+shuffleButton.addEventListener('keydown', event => {
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+  event.preventDefault();
+  openThemeMenu();
+});
+themeMenu.addEventListener('keydown', event => {
+  const items = pickableItems();
+  const index = items.indexOf(document.activeElement);
+  let next = null;
+  if (event.key === 'ArrowDown') next = items[(index + 1) % items.length];
+  else if (event.key === 'ArrowUp') next = items[(index - 1 + items.length) % items.length];
+  else if (event.key === 'Home') next = items[0];
+  else if (event.key === 'End') next = items.at(-1);
+  else if (event.key === 'Escape') { event.preventDefault(); closeThemeMenu(true); return; }
+  else if (event.key === 'Tab') { closeThemeMenu(false); return; }
+  else return;
+  event.preventDefault();
+  next?.focus();
+});
+document.addEventListener('pointerdown', event => {
+  if (!themeMenu.hidden && !event.target.closest('#theme-menu, #shuffle')) closeThemeMenu(false);
+});
+
 function setTheme(theme) {
   if (theme === 'postmodern' && currentTheme !== theme) postmodernStartedAt = forestTime;
   currentTheme = theme;
   document.documentElement.dataset.theme = theme;
+  if (theme === 'snowdrift') buildScarf();
+  applyThemeIcon(theme);
   centerEye();
   positionEye();
 }
 
-let eyeGazeX = 0;
-let eyeGazeY = 0;
+// The painted gaze eases toward the target gaze, so the eye turns instead of jumping.
+let eyeSightX = eyeRestSight[0];
+let eyeSightY = eyeRestSight[1];
+let eyeTargetX = eyeSightX;
+let eyeTargetY = eyeSightY;
 let eyeFrame = 0;
+let eyeLastStep = 0;
+// Seconds for the gaze to cover about 63 % of the remaining turn; it settles in roughly 0.35 s.
+const eyeLag = .12;
+// Distance, in CSS px, of the imaginary plane the pointer sits on in front of the globe.
+const eyeDepth = 220;
 
 function positionEye() {
   if (currentTheme !== 'postmodern' || !supported.matches) return;
@@ -436,44 +853,85 @@ function positionEye() {
   const anchor = (nameEnd + schoolStart) / 2 - toolbarBounds.left;
   eyeToolbar.style.setProperty('--eye-anchor', anchor + 'px');
   eyeToolbar.style.setProperty('--eye-rise', (toolbarBounds.top + window.scrollY) + 'px');
-  paintPostmodernEye(eyeCanvas, eyeGazeX, eyeGazeY);
+  paintPostmodernEye(eyeCanvas, eyeSightX, eyeSightY);
 }
 
 function queueEyeFrame() {
   if (currentTheme !== 'postmodern' || !supported.matches || eyeFrame) return;
-  eyeFrame = requestAnimationFrame(() => {
-    eyeFrame = 0;
-    if (currentTheme === 'postmodern' && supported.matches) {
-      paintPostmodernEye(eyeCanvas, eyeGazeX, eyeGazeY);
-    }
-  });
+  eyeLastStep = performance.now();
+  eyeFrame = requestAnimationFrame(stepEye);
 }
 
+function stepEye(now) {
+  eyeFrame = 0;
+  if (currentTheme !== 'postmodern' || !supported.matches) return;
+  // Frame-rate independent easing; both gazes lie inside the turn limit, so every step does too.
+  const ease = 1 - Math.exp(-Math.max(0, now - eyeLastStep) / 1000 / eyeLag);
+  eyeLastStep = now;
+  eyeSightX += (eyeTargetX - eyeSightX) * ease;
+  eyeSightY += (eyeTargetY - eyeSightY) * ease;
+  const settled = Math.hypot(eyeTargetX - eyeSightX, eyeTargetY - eyeSightY) < .003;
+  if (settled) {
+    eyeSightX = eyeTargetX;
+    eyeSightY = eyeTargetY;
+  }
+  paintPostmodernEye(eyeCanvas, eyeSightX, eyeSightY);
+  if (!settled) eyeFrame = requestAnimationFrame(stepEye);
+}
+
+// Pause, reduced motion and theme changes put the eye at rest at once, with no motion.
 function centerEye() {
-  eyeGazeX = 0;
-  eyeGazeY = 0;
+  [eyeSightX, eyeSightY] = eyeRestSight;
+  [eyeTargetX, eyeTargetY] = eyeRestSight;
   queueEyeFrame();
+}
+
+// Aim straight at a point on the page, so level reads as level and both axes respond equally.
+function lookAt(clientX, clientY) {
+  const eye = eyeCanvas.getBoundingClientRect();
+  const dx = clientX - eye.left - eye.width / 2;
+  const dy = clientY - eye.bottom + eyeCenterFromBottom;
+  const length = Math.hypot(dx, dy, eyeDepth);
+  const turn = Math.hypot(dx, dy) / length;
+  const limit = turn > eyeMaxTurn ? eyeMaxTurn / turn : 1;
+  eyeTargetX = dx / length * limit;
+  eyeTargetY = dy / length * limit;
+  queueEyeFrame();
+}
+
+function canTrackEye() {
+  return currentTheme === 'postmodern' && supported.matches && !reduced.matches && !paused;
+}
+
+// With no pointer to follow, the eye turns to stare at the Shuffle button.
+function glanceAtShuffle() {
+  if (!canTrackEye()) return;
+  const target = shuffleButton.getBoundingClientRect();
+  lookAt(target.left + target.width / 2, target.top + target.height / 2);
 }
 
 document.addEventListener('pointermove', event => {
-  if (currentTheme !== 'postmodern' || !supported.matches || reduced.matches || paused || event.pointerType === 'touch') return;
-  const eye = eyeCanvas.getBoundingClientRect();
-  const x = (event.clientX - eye.left - eye.width / 2) / 140;
-  const y = (event.clientY - eye.bottom + eyeCenterFromBottom) / 110;
-  const distance = Math.max(1, Math.hypot(x, y));
-  eyeGazeX = x / distance * 23;
-  eyeGazeY = y / distance * 8;
-  queueEyeFrame();
+  if (!canTrackEye() || event.pointerType === 'touch') return;
+  lookAt(event.clientX, event.clientY);
 }, { passive: true });
-document.documentElement.addEventListener('pointerleave', centerEye);
-window.addEventListener('blur', centerEye);
+document.documentElement.addEventListener('pointerleave', glanceAtShuffle);
+// mouseout with no relatedTarget is the most reliable signal that the pointer left the window.
+document.addEventListener('mouseout', event => { if (!event.relatedTarget) glanceAtShuffle(); });
+window.addEventListener('blur', glanceAtShuffle);
 window.addEventListener('resize', positionEye);
 const eyeLayoutObserver = new ResizeObserver(positionEye);
 eyeLayoutObserver.observe(eyeHeadline);
 eyeLayoutObserver.observe(eyeSchool);
+// Refit the scarf when the name changes size (window resize, or Fraunces finishing loading).
+new ResizeObserver(() => {
+  if (currentTheme !== 'snowdrift') return;
+  buildScarf();
+  updateScarf();
+}).observe(document.querySelector('.name'));
 
 async function rebuildScene(nextTheme) {
   if (reduced.matches || paused) {
+    resetWeather();
     setTheme(nextTheme);
     syncForest();
     return;
@@ -481,6 +939,11 @@ async function rebuildScene(nextTheme) {
   rebuilding = true;
   cancelAnimationFrame(forestRequest);
   const sceneDuration = 710;
+  const entering = nextTheme === 'snowdrift' && currentTheme !== 'snowdrift';
+  const leaving = currentTheme === 'snowdrift' && nextTheme !== 'snowdrift';
+  // Snow blows in over 1.5 s. Leaving, the usual 0.71 s border swap runs inside a ~2 s melt.
+  const swapStart = leaving ? 1000 : 0;
+  const total = entering ? 1500 : leaving ? 2000 : sceneDuration;
   const eyeExit = currentTheme === 'postmodern' && nextTheme !== currentTheme && supported.matches
     ? eyeCanvas.animate([
         { transform: getComputedStyle(eyeCanvas).transform },
@@ -490,13 +953,19 @@ async function rebuildScene(nextTheme) {
   try {
     await new Promise(resolve => {
       const start = performance.now();
+      let last = start;
       let eyeCleared = !eyeExit;
       function frame(now) {
         const skipMotion = reduced.matches || paused;
+        const elapsed = skipMotion ? total : now - start;
+        // Weather needs real time to fall and melt; other scenes hold still while they scatter.
+        if (entering || leaving) forestTime += Math.min(80, Math.max(0, now - last)) / 1000;
+        last = now;
         const canSwitchTheme = skipMotion || eyeCleared;
-        const progress = skipMotion ? 1 : Math.min(canSwitchTheme ? 1 : .5, (now - start) / sceneDuration);
+        const progress = Math.min(canSwitchTheme ? 1 : .5, Math.max(0, (elapsed - swapStart) / sceneDuration));
         if (progress >= .5 && canSwitchTheme && currentTheme !== nextTheme) {
           setTheme(nextTheme);
+          if (entering) snowCover = 0;
           if (!skipMotion) {
             document.querySelectorAll('.site-header h1, .school, .toolbar p').forEach(element => {
               element.animate([
@@ -511,8 +980,17 @@ async function rebuildScene(nextTheme) {
         // Leave one frame for the eye to clear the viewport before closing the gap.
         if (eyeExit?.playState === 'finished') eyeCleared = true;
         sceneVisibility = Math.abs(1 - 2 * progress);
+        if (entering && !skipMotion) {
+          weather.burst = Math.min(1, elapsed / total);
+          if (currentTheme === 'snowdrift') snowCover = smooth((elapsed - sceneDuration / 2) / (total - sceneDuration / 2));
+        }
+        if (leaving && !skipMotion) {
+          weather.melt = Math.min(1, elapsed / total);
+          weather.sun = Math.max(0, Math.min(1, elapsed / 500, (total - elapsed) / 500));
+          if (currentTheme === 'snowdrift') snowCover = 1 - .8 * smooth(elapsed / swapStart);
+        }
         drawForest(forestTime);
-        if (progress < 1) requestAnimationFrame(frame);
+        if (elapsed < total || progress < 1) requestAnimationFrame(frame);
         else resolve();
       }
       requestAnimationFrame(frame);
@@ -521,11 +999,37 @@ async function rebuildScene(nextTheme) {
     eyeExit?.cancel();
     rebuilding = false;
     sceneVisibility = 1;
+    resetWeather();
     syncForest();
   }
 }
 
+// Edges without moving parts are drawn once per theme and size, then reused every frame.
+const edgeCache = new Map();
+
+function isStaticEdge(id) {
+  return currentTheme === 'mountains' && id !== 3;
+}
+
+function cachedEdge(id, length, depth, originX, originY, width, height, ratio, painter) {
+  const key = [currentTheme, length, depth, width, height, ratio].join('|');
+  const cached = edgeCache.get(id);
+  if (cached?.key === key) return cached.canvas;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(width * ratio);
+  canvas.height = Math.ceil(height * ratio);
+  const pen = canvas.getContext('2d');
+  pen.scale(canvas.width / width, canvas.height / height);
+  pen.font = context.font;
+  pen.textAlign = 'center';
+  pen.textBaseline = 'middle';
+  drawEdge(length, depth, id, 0, painter(pen, originX, originY));
+  edgeCache.set(id, { key, canvas });
+  return canvas;
+}
+
 function drawForest(time) {
+  updateScarf();
   if (!supported.matches) return;
   const { left, top, right, bottom } = desk.getBoundingClientRect();
   const width = forest.clientWidth;
@@ -550,6 +1054,7 @@ function drawForest(time) {
     paintPostmodernShips(context, shipTime, width, height, top, bottom, sceneVisibility);
     drawPostmodernShell(left, top, right, bottom, shipTime);
     if (expanded.hidden) drawGutters(left, top, gridWidth, gridHeight, shipTime);
+    drawWeather(width, height, top, time);
     return;
   }
   const style = getComputedStyle(desk);
@@ -567,17 +1072,24 @@ function drawForest(time) {
     const acrossY = tangentX;
     const farX = x + length * tangentX - depth * acrossX;
     const farY = y + length * tangentY - depth * acrossY;
+    const clipX = Math.min(x, farX);
+    const clipY = Math.min(y, farY);
+    const clipWidth = Math.abs(x - farX);
+    const clipHeight = Math.abs(y - farY);
+    // Turn the scene around the grid while keeping the individual glyphs upright.
+    const painter = (pen, originX, originY) => (glyph, along, across, color) => {
+      pen.fillStyle = color;
+      pen.fillText(glyph, x - originX + along * tangentX + across * acrossX, y - originY + along * tangentY + across * acrossY);
+    };
+    if (sceneVisibility === 1 && isStaticEdge(id)) {
+      context.drawImage(cachedEdge(id, length, depth, clipX, clipY, clipWidth, clipHeight, ratio, painter), clipX, clipY, clipWidth, clipHeight);
+      return;
+    }
     context.save();
     context.beginPath();
-    context.rect(
-      Math.min(x, farX), Math.min(y, farY),
-      Math.abs(x - farX), Math.abs(y - farY)
-    );
+    context.rect(clipX, clipY, clipWidth, clipHeight);
     context.clip();
-    // Turn the scene around the grid while keeping the individual glyphs upright.
-    drawEdge(length, depth, id, time, (glyph, along, across) => {
-      context.fillText(glyph, x + along * tangentX + across * acrossX, y + along * tangentY + across * acrossY);
-    });
+    drawEdge(length, depth, id, time, painter(context, 0, 0));
     context.restore();
   });
   if (currentTheme === 'space') {
@@ -586,7 +1098,12 @@ function drawForest(time) {
     drawSpaceCorner('southEast', right, bottom, 1, 1, side, end, time);
     drawSpaceCorner('southWest', left, bottom, -1, 1, side, end, time);
   }
+  if (currentTheme === 'snowdrift') {
+    const box = { left, top, right, bottom };
+    for (const name of ['tl', 'tr', 'br', 'bl']) drawSnowCornerAt(name, box, side, end, time);
+  }
   if (expanded.hidden) drawGutters(left, top, gridWidth, gridHeight);
+  drawWeather(width, height, top, time);
 }
 
 function borderPulse(time, distance) {
@@ -629,7 +1146,8 @@ function drawPostmodernShell(left, top, right, bottom, time) {
 const groundStyles = {
   forest: { fill: '#26372a', material: 'earth', marks: ['.v,:', "';i.", ',:r.', '.:-;'] },
   space: { fill: '#212038', material: 'star', marks: ['. .:', ' .,.', ': . ', ' ,. '] },
-  mountains: { fill: '#253544', material: 'shale', marks: ['.:,v', ":.'.", '.,i:', ':.-.'] }
+  mountains: { fill: '#253544', material: 'shale', marks: ['.:,v', ":.'.", '.,i:', ':.-.'] },
+  snowdrift: { fill: '#2a3747', material: 'snow', marks: [".*,'", "'.:*", ',.*.', ".:'*"] }
 };
 
 function drawGround(left, top, right, bottom) {
@@ -771,10 +1289,9 @@ function drawEdge(length, depth, edge, time, paintGlyph) {
       const scatter = 1 - sceneVisibility;
       const dx = (noise(x, y + 89) - .5) * scatter * 12;
       const dy = (noise(x + 9, y + 11) - .5) * scatter * 9;
-      context.fillStyle = color;
       const along = Math.max(3.5, Math.min(length - 3.5, (x + .5) * cellWidth + dx));
       const across = Math.max(3.5 - depth, Math.min(-3.5, (y - rows + .5) * cellHeight + dy));
-      paintGlyph(glyph, along, across);
+      paintGlyph(glyph, along, across, color);
     }));
   }
 
@@ -784,11 +1301,16 @@ function drawEdge(length, depth, edge, time, paintGlyph) {
     return;
   }
 
+  // On the left edge a gust climbs the clearing every 9 s. At time 0 its front sits just off the edge.
+  const gustFront = edge === 0 ? (time / 9) % 1 * 1.6 - .3 : -1;
+  const gust = x => edge === 0 ? Math.exp(-((((x / cols) - gustFront) * 6) ** 2)) : 0;
+
   for (let x = 2; x < cols - 2; x++) {
     const clearance = Math.min(x, cols - 1 - x);
     const ground = Math.min(1, (clearance - 1) / 11);
-    if (noise(x, 4) < ground) write(x, rows - 1, ground * (.44 + .49 * noise(x, 0)), 'earth');
-    if (noise(x, 1) > 1 - ground * .21) write(x, rows - 2, .38 + .4 * noise(x, 2), 'earth');
+    const ripple = gust(x);
+    if (noise(x, 4) < ground) write(x, rows - 1, ground * (.44 + .49 * noise(x, 0)) + ripple * .3, 'earth');
+    if (noise(x, 1) > 1 - ground * (.21 + ripple * .5)) write(x, rows - 2, .38 + .4 * noise(x, 2) + ripple * .25, 'earth');
     if (clearance > 7 && noise(x, 13) > .988) {
       surface(x, rows - 2, 1.8, .8, 'earth');
       write(x, rows - 2, .82, 'pine');
@@ -797,7 +1319,7 @@ function drawEdge(length, depth, edge, time, paintGlyph) {
 
   function pine(x, base, treeHeight, distant) {
     const top = base - treeHeight;
-    const sway = Math.sin(time * 1.7 + x) * (distant ? .4 : 1.2);
+    const sway = Math.sin(time * 1.7 + x) * (distant ? .4 : 1.2) + gust(x) * (distant ? 1.4 : 3);
     write(x, base, distant ? .31 : .73, 'deer');
     for (let y = top; y < base; y++) {
       const level = (y - top) / Math.max(1, treeHeight - 2);
@@ -829,6 +1351,10 @@ function drawEdge(length, depth, edge, time, paintGlyph) {
     }
   }
   if (edge === 0) {
+    // A slow cloud crosses the open sky beyond the treetops.
+    const driftX = cols * (.55 + .3 * Math.sin(time * .19));
+    surface(driftX, 1.3, 5.2, .9, 'cloud');
+    surface(driftX + 4, 1, 3.6, 1.1, 'cloud');
     // A shaded clearing frames the deer and a fallen log.
     pine(cols * .18, rows - 2, Math.round(rows * .74), false);
     pine(cols * .27, rows - 3, Math.round(rows * .47), true);
@@ -839,23 +1365,46 @@ function drawEdge(length, depth, edge, time, paintGlyph) {
     surface(log - 5, rows - 2.3, .6, .57, 'deer');
   }
   if (edge === 1) {
-    // Rounded crowns, stems and stones along a woodland path.
-    for (const [position, size] of [[.18,.8],[.43,.58],[.77,.93]]) {
+    // Rounded crowns, stems and stones along a woodland path. Each crown rocks on its own beat.
+    const crowns = [[.18,.8],[.43,.58],[.77,.93]];
+    crowns.forEach(([position, size], index) => {
       const trunk = Math.round(cols * position);
       const crown = rows * (1 - size * .68);
+      const rock = Math.sin(time * 1.1 + index * 2.1) * (.6 + size * .7);
       for (let y = Math.floor(crown); y < rows - 1; y++) {
         write(trunk - 1, y, .68, 'deer', '/');
         write(trunk, y, .4, 'deer', '|');
       }
-      surface(trunk - 3, crown + .9, size * 6.5, size * 2.7, 'pine', -.15);
-      surface(trunk + 3, crown + 2, size * 5.7, size * 2.5, 'pine', .12);
-      surface(trunk, crown, size * 5.8, size * 3.3, 'pine');
-    }
+      surface(trunk - 3 + rock * .7, crown + .9, size * 6.5, size * 2.7, 'pine', -.15 + rock * .04);
+      surface(trunk + 3 + rock * .7, crown + 2, size * 5.7, size * 2.5, 'pine', .12 + rock * .04);
+      surface(trunk + rock, crown, size * 5.8, size * 3.3, 'pine');
+    });
     for (const [position, radius] of [[.31,3.4],[.55,2.5],[.62,4.3],[.89,2.2]]) {
       surface(cols * position, rows - 2, radius, 1.25, 'stone');
     }
+    // Leaves drift from the crowns down to the path.
+    for (const [index, phase] of [[0, 1.3], [1, 4.2], [2, .4], [2, 3.9]]) {
+      const [position, size] = crowns[index];
+      const crown = rows * (1 - size * .68);
+      const fall = ((time + phase) / 6.5) % 1;
+      const leafY = Math.round(crown + 2 + (rows - 3 - crown) * fall);
+      const leafX = Math.round(cols * position + Math.sin((time + phase) * 1.9) * 2.5 + fall * 3);
+      const glyph = Math.sin((time + phase) * 3) > 0 ? '~' : ',';
+      write(leafX, leafY, .55 + .3 * Math.sin(time * 4 + phase), fall < .6 ? 'pine' : 'earth', glyph);
+    }
+    // A bird crosses the open sky beyond the crowns every 12 s; at time 0 it is off the edge.
+    const flight = (time / 12) % 1;
+    if (flight < .6) {
+      const birdX = Math.round(cols * (1.05 - flight / .6 * 1.1));
+      const birdY = Math.round(1.5 + Math.sin(flight * 20) * .8);
+      write(birdX, birdY, .85, 'cloud', Math.sin(time * 9) > 0 ? 'v' : '-');
+    }
   }
   if (edge === 2 && rows >= 6) {
+    // A few pines stand behind the hedgerow, spaced away from the rabbit at .75.
+    for (const [position, height, distant] of [[.05,.78,false],[.23,.55,true],[.42,.72,false],[.54,.46,true],[.96,.62,false]]) {
+      pine(Math.round(cols * position), rows - 1, Math.round(rows * height), distant);
+    }
     const shrubs = [
       [.09,7,3.2], [.18,11,4.2], [.30,7,2.5], [.36,10,4.6],
       [.48,12,3.4], [.59,8,2.9], [.65,5,2.2], [.83,8,3.5], [.91,7,2.7]
@@ -880,13 +1429,25 @@ function drawEdge(length, depth, edge, time, paintGlyph) {
     const headDown = time % 8 < 6;
     surface(x - 3.4, y + 1.65, .58, 1.75, 'deer', -.18);
     surface(x + 3.3, y + 1.65, .57, 1.75, 'deer', .22);
-    surface(x - 5.5, y - .25, 1.5, .48, 'deer', -.32);
+    // Brief, sharp pulses: the tail flicks and the ear twitches between long rests.
+    const flick = Math.max(0, Math.sin(time * 3.1)) ** 8;
+    const twitch = Math.max(0, Math.sin(time * 2.3 + 1)) ** 12;
+    surface(x - 5.5, y - .25 - flick * .6, 1.5, .48, 'deer', -.32 - flick * .9);
     surface(x, y, 5.8, 1.6, 'deer', -.08);
     surface(x + 4.7, y + (headDown ? .65 : -.9), 2.7, .85, 'deer', headDown ? .63 : -.78);
     const faceY = y + (headDown ? 2 : -2.35);
     surface(x + 7, faceY, 1.9, .87, 'deer', headDown ? .4 : -.03);
-    surface(x + 6, faceY - .7, .9, .47, 'deer', -.65);
+    surface(x + 6, faceY - .7 - twitch * .3, .9, .47, 'deer', -.65 + twitch * .5);
     write(x + 7, Math.round(faceY), .2, 'deer');
+
+    // Needles flutter down from the crowns into the clearing; the gust pushes them along.
+    for (const [start, phase] of [[.16, 0], [.25, 2.6], [.84, 5.1]]) {
+      const fall = ((time + phase) / 7.5) % 1;
+      const leafY = Math.round(rows * (.3 + .62 * fall));
+      const leafX = Math.round(cols * start + Math.sin((time + phase) * 2.1) * 2 + gust(cols * start) * 4 * fall);
+      const glyph = Math.sin((time + phase) * 3.3) > 0 ? "'" : ',';
+      write(leafX, leafY, .62 + .25 * Math.sin(time * 5 + phase), fall < .5 ? 'pine' : 'deer', glyph);
+    }
   }
   if (edge === 2 && rows >= 6) {
     const y = rows - 2.7;
@@ -1069,8 +1630,216 @@ function drawMountains({ cols, rows, edge, time, noise, write, surface }) {
   surface(cols * .53, rows - 2.7, Math.min(9, cols * .08), .7, 'ice');
 }
 
+function drawSnowdrift({ cols, rows, edge, time, noise, write, surface }) {
+  const cover = snowCover;
+  const melt = 1 - cover;
+  const base = rows - 1;
+
+  // Pines carry snow on the upper-left of each tier; the caps thin out as the snow melts.
+  function snowyPine(x, foot, height, distant) {
+    const top = foot - height;
+    const sway = Math.sin(time * 1.3 + x) * (distant ? .3 : .8);
+    write(Math.round(x), foot, distant ? .3 : .6, 'deer');
+    for (let y = top; y < foot; y++) {
+      const level = (y - top) / Math.max(1, height - 2);
+      const center = x + sway * (1 - level);
+      const radius = .6 + level * (distant ? 2.6 : 4.2) + ((y - top) % 3) * .4;
+      const tierTop = (y - top) % 3 === 0;
+      for (let i = Math.ceil(center - radius); i <= center + radius; i++) {
+        const u = (i - center) / radius;
+        if (tierTop && u < .55 && noise(i, y) < cover) write(i, y, .62 + .3 * (1 - Math.abs(u)), 'snow');
+        else write(i, y, (.16 + .5 * Math.sqrt(Math.max(0, 1 - u * u)) - .28 * u) * (distant ? .6 : 1), 'pine');
+      }
+    }
+  }
+
+  function stand(spots) {
+    for (const [position, height, distant] of spots) {
+      const foot = base - (distant ? 2 : 1);
+      snowyPine(Math.round(cols * position), foot, Math.max(2, Math.min(foot, Math.round(rows * height))), distant);
+    }
+  }
+
+  // Rolling banks along the ground; melting shrinks them and leaves puddles behind.
+  function drifts() {
+    for (let x = 0; x < cols; x++) {
+      const swell = .55 + .45 * Math.sin(x * .085 + edge * 1.7) * Math.sin(x * .031 + edge);
+      const tall = Math.round(rows * .3 * swell * cover + (cover > .05 ? 1 : 0));
+      for (let y = rows - tall; y < rows; y++) {
+        const inside = (y - (rows - tall)) / Math.max(1, tall);
+        write(x, y, .92 - inside * .45 - .12 * noise(x, y), 'snow');
+      }
+      if (melt > .15 && noise(x, 7) < melt * .5) write(x, base, .5 + .3 * noise(x, 9), 'water', noise(x, 5) > .5 ? '~' : '_');
+    }
+  }
+
+  function snowman(x) {
+    const s = Math.max(.35, cover);
+    const foot = base - 1;
+    surface(x, foot - 1.6 * s, 2.6 * s, 1.6 * s, 'snow');
+    surface(x + .2, foot - 4 * s, 1.9 * s, 1.15 * s, 'snow');
+    surface(x + .3, foot - 6 * s, 1.4 * s, .9 * s, 'snow');
+    if (cover < .5) return;
+    const cx = Math.round(x);
+    const head = Math.round(foot - 6 * s);
+    const hat = Math.round(foot - 7.5 * s);
+    for (let dx = -1; dx <= 1; dx++) write(cx + dx, hat, .25, 'stone', '=');
+    write(cx, hat - 1, .2, 'stone', '#');
+    write(cx, head, .1, 'stone', '.');
+    write(cx + 1, head, .1, 'stone', '.');
+    write(cx + 2, head + 1, .8, 'carrot', '>');
+    const arms = Math.round(foot - 4 * s);
+    write(cx - 3, arms - 1, .5, 'deer', '\\');
+    write(cx + 3, arms - 1, .5, 'deer', '/');
+  }
+
+  if (edge === 3) {
+    for (let x = 6; x < cols - 6; x += 5 + Math.floor(noise(x, 27) ** 3 * 14)) {
+      const foot = base - 2 - Math.floor(noise(x, 19) * 2);
+      snowyPine(x, foot, Math.max(2, Math.min(foot, 2 + Math.floor(noise(x, 31) * rows * .45))), true);
+    }
+    for (let x = 11; x < cols - 10; x += 8 + Math.floor(noise(x, 4) ** 2 * 26)) {
+      const foot = base - 1;
+      snowyPine(x, foot, Math.max(2, Math.round(foot * (.4 + .55 * noise(x, 6)))), false);
+    }
+    drifts();
+    return;
+  }
+  if (edge === 0) {
+    stand([[.15, .72, false], [.3, .45, true], [.85, .6, false]]);
+    drifts();
+    snowman(cols * .55);
+    return;
+  }
+  if (edge === 1) {
+    stand([[.14, .62, false], [.3, .4, true], [.78, .7, false], [.9, .44, true]]);
+    drifts();
+    // A frozen pond thaws to open water as the snow goes.
+    surface(cols * .52, rows - 2.2, Math.min(14, cols * .12), 1.3, cover > .45 ? 'ice' : 'water');
+    return;
+  }
+  stand([[.08, .7, false], [.27, .5, true], [.62, .66, false], [.93, .55, false]]);
+  drifts();
+  // Rabbit tracks cross the bank.
+  if (cover > .6) {
+    for (let x = Math.round(cols * .36); x < cols * .54; x += 5) write(x, base - 1, .25, 'shale', ':');
+  }
+}
+
+// Corner drift sizes in characters, measured out from the grid corner at full snow:
+// [length along the horizontal grid line, height along the vertical grid line].
+const snowCornerSize = { tl: [6, 3], tr: [7, 4], br: [4, 3], bl: [4, 3] };
+const snowCornerSpots = { tl: [-1, -1, 1], tr: [1, -1, 2], br: [1, 1, 3], bl: [-1, 1, 4] };
+
+function drawSnowCornerAt(name, box, side, end, time = 0) {
+  const [directionX, directionY, seed] = snowCornerSpots[name];
+  const originX = directionX < 0 ? box.left : box.right;
+  const originY = directionY < 0 ? box.top : box.bottom;
+  const [sizeX, sizeY] = snowCornerSize[name];
+  drawSnowCorner(originX, originY, directionX, directionY, side, end, time, seed, sizeX, sizeY);
+}
+
+// Each corner gets its own drift, piled into the angle where the two ground lines meet,
+// deepest at the grid corner and sloping away, so it always rests on ground and never floats.
+function drawSnowCorner(originX, originY, directionX, directionY, width, height, time, seed, sizeX, sizeY) {
+  // Fixed character sizes at every window size; shrinks with the melt and is gone when melted.
+  const cover = snowCover;
+  if (cover <= .05) return;
+  const cols = Math.min(Math.floor(width / glyphWidth), Math.max(1, Math.round(sizeX * cover)));
+  const rows = Math.min(Math.floor(height / glyphHeight), Math.max(1, Math.round(sizeY * cover)));
+  context.save();
+  context.beginPath();
+  context.rect(directionX < 0 ? originX - width : originX, directionY < 0 ? originY - height : originY, width, height);
+  context.clip();
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const along = (col + .5) * glyphWidth;
+      const across = (row + .5) * glyphHeight;
+      // A quarter ellipse in character cells: the two edges on the grid lines keep their full
+      // length, and the outer edge is rounded. Being convex, it can never leave a floating piece.
+      const u = (col + .5) / cols;
+      const v = (row + .5) / rows;
+      const d = Math.hypot(u, v);
+      if (d > 1 && row > 0 && col > 0) continue;
+      const grain = hash(col * 31 + row, seed + 11);
+      if (sceneVisibility < 1 && grain >= sceneVisibility) continue;
+      const z = Math.sqrt(Math.max(0, 1 - d * d));
+      // The slope faces away from the corner; light comes from the upper left, like the edges.
+      const nx = u / Math.max(d, .001) * directionX * (1 - z);
+      const ny = v / Math.max(d, .001) * directionY * (1 - z);
+      const light = Math.max(0, Math.min(1, .36 + .44 * z - .2 * nx - .15 * ny + .1 * grain));
+      const sparkle = light > .75 && Math.sin(time * 2.4 + col * 1.3 + row * 2.7 + seed) > .985;
+      context.fillStyle = palettes.snow[Math.round(light * 4)];
+      context.fillText(sparkle ? '*' : ramp[Math.round(light * (ramp.length - 1))], originX + along * directionX, originY + across * directionY);
+    }
+  }
+  context.restore();
+}
+
+function drawFlake(x, y, b, c, alpha) {
+  context.globalAlpha = alpha * (.35 + .55 * b);
+  context.fillStyle = palettes.snow[2 + Math.round(b * 2)];
+  context.fillText(c < .55 ? '.' : c < .8 ? '*' : c < .9 ? "'" : '+', x, y);
+}
+
+// Full-page snowfall (fading in during the snow-in), melt drips and the sun, drawn behind the windows.
+function drawWeather(width, height, deskTop, time) {
+  const steady = currentTheme === 'snowdrift'
+    ? Math.max(0, 1 - weather.melt * 2) * (weather.burst >= 0 ? smooth((weather.burst - .4) / .6) : 1)
+    : 0;
+  if (!steady && weather.burst < 0 && !weather.melt && !weather.sun) return;
+  context.save();
+  context.font = '7px "Courier New", monospace';
+  const fall = height + 24;
+  const flakes = Math.round(Math.min(160, width * height / 9000) * steady);
+  for (let i = 0; i < flakes; i++) {
+    const a = hash(i, 1), b = hash(i, 2), c = hash(i, 3);
+    const y = (a * fall + time * (9 + 15 * b)) % fall - 12;
+    const x = c * width + Math.sin(time * (.4 + .5 * b) + i) * (5 + 9 * a);
+    drawFlake(x, y, b, c, 1);
+  }
+  if (weather.melt > .15 && weather.melt < .85) {
+    const dripStrength = Math.sin(Math.PI * (weather.melt - .15) / .7);
+    context.font = '7px "Courier New", monospace';
+    context.fillStyle = palettes.water[3];
+    for (let i = 0; i < 70; i++) {
+      const a = hash(i, 7), b = hash(i, 8), c = hash(i, 9);
+      const cycle = (weather.melt * 3 + a) % 1;
+      context.globalAlpha = dripStrength * (1 - cycle * .6) * .8;
+      context.fillText(cycle < .7 ? "'" : ',', b * width, c * height + cycle * cycle * 26);
+    }
+  }
+  if (weather.sun > 0) {
+    const cx = width / 2;
+    const cy = -40 + weather.sun * 100;
+    const radius = 24;
+    context.globalAlpha = Math.min(1, weather.sun * 1.5);
+    context.font = '7px "Courier New", monospace';
+    for (let dy = -radius; dy <= radius; dy += glyphHeight) {
+      for (let dx = -radius; dx <= radius; dx += glyphWidth) {
+        const d = Math.hypot(dx, dy) / radius;
+        if (d > 1) continue;
+        const light = Math.max(0, Math.min(1, .55 + .45 * Math.sqrt(1 - d * d) - .15 * dx / radius));
+        context.fillStyle = palettes.sun[Math.round(light * 4)];
+        context.fillText(ramp[Math.round(light * (ramp.length - 1))], cx + dx, cy + dy);
+      }
+    }
+    const rays = ['-', '\\', '|', '/'];
+    for (let k = 0; k < 12; k++) {
+      const angle = k * Math.PI / 6 + time * .4;
+      const glyph = rays[Math.round((((angle % Math.PI) + Math.PI) % Math.PI) / (Math.PI / 4)) % 4];
+      for (const reach of [radius + 6, radius + 12]) {
+        context.fillStyle = palettes.sun[reach > radius + 8 ? 2 : 3];
+        context.fillText(glyph, cx + Math.cos(angle) * reach, cy + Math.sin(angle) * reach);
+      }
+    }
+  }
+  context.restore();
+}
+
 function drawAlternateScene(theme, scene) {
   if (theme === 'space') drawSpace(scene);
+  else if (theme === 'snowdrift') drawSnowdrift(scene);
   else drawMountains(scene);
 }
 
@@ -1081,7 +1850,8 @@ let lastDraw;
 function animateForest(now) {
   if (lastFrame !== undefined) forestTime += Math.min(80, now - lastFrame) / 1000;
   lastFrame = now;
-  const interval = currentTheme === 'postmodern' ? 1000 / 30 : 100;
+  // Falling snow needs a smoother frame rate than the slow-swaying scenes.
+  const interval = currentTheme === 'postmodern' ? 1000 / 30 : currentTheme === 'snowdrift' ? 1000 / 24 : 100;
   if (lastDraw === undefined || now - lastDraw >= interval) {
     drawForest(forestTime);
     lastDraw = now;
@@ -1100,7 +1870,8 @@ function syncForest() {
 motionButton.addEventListener('click', () => {
   paused = !paused;
   if (paused) centerEye();
-  motionButton.textContent = paused ? 'Resume background' : 'Pause background';
+  // The accessible name stays fixed and aria-pressed carries the state; the tooltip names the next action.
+  motionButton.title = paused ? 'Play background animation' : 'Pause background animation';
   motionButton.setAttribute('aria-pressed', String(paused));
   syncForest();
 });
@@ -1113,3 +1884,5 @@ reduced.addEventListener('change', updateMotionPreference);
 document.addEventListener('visibilitychange', syncForest);
 window.addEventListener('resize', syncForest);
 updateMotionPreference();
+applyThemeIcon(currentTheme);
+syncFromHash();

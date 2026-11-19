@@ -3,8 +3,11 @@ const nerveFlesh = ['#350b14', '#71151f', '#a92834', '#e44648', '#ff8a71'];
 const eyeWhite = ['#49212b', '#8e464b', '#bd746b', '#ecc0a2', '#fff1d0'];
 const eyeIris = ['#351019', '#6d1521', '#ba2d3b', '#ff6357', '#ffad88'];
 const eyeCenterFromBottom = 60;
+// Resting gaze (down and slightly right, toward the grid) and the largest turn the iris can make.
+const eyeRestSight = [.19, .28];
+const eyeMaxTurn = .66;
 
-function paintPostmodernEye(canvas, gazeX, gazeY) {
+function paintPostmodernEye(canvas, sightX, sightY) {
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
   if (!width || !height) return;
@@ -35,9 +38,7 @@ function paintPostmodernEye(canvas, gazeX, gazeY) {
 
   const radius = 53;
   const root = centerY - radius * .61;
-  const sightX = .19 + gazeX / 53;
-  const sightY = .28 + gazeY / 25;
-  const sightZ = Math.sqrt(1 - sightX * sightX - sightY * sightY);
+  const sightZ = Math.sqrt(Math.max(0, 1 - sightX * sightX - sightY * sightY));
 
   // The weight of the eye keeps the cord mostly vertical before it tucks behind the globe.
   for (let y = 2; y <= root; y += cellHeight) {
@@ -79,12 +80,7 @@ function paintPostmodernEye(canvas, gazeX, gazeY) {
       const grain = .5 + .5 * Math.sin(dx * 3.77 + dy * 8.92);
       const x = centerX + dx;
       const y = centerY + dy;
-      if (u < -.63 && distance > .87 + .045 * Math.sin(dy * .2) && dy < 5) {
-        const folds = Math.sin(dx * .7 + dy * .22) * .13 + Math.sin(dx * .19 - dy * .43) * .11;
-        glyph(x, y, .24 + depth * .39 - u * .16 - v * .12 + folds + grain * .09, nerveFlesh);
-        continue;
-      }
-
+      // The iris is checked first so it never slides under the rim tissue when the gaze turns up or left.
       const irisX = dx - sightX * radius;
       const irisY = dy - sightY * radius;
       const facing = u * sightX + v * sightY + depth * sightZ;
@@ -100,6 +96,12 @@ function paintPostmodernEye(canvas, gazeX, gazeY) {
         const rim = irisRadius > .87 ? .21 : 0;
         const light = .62 + fibres - irisX * .008 - irisY * .009 - rim;
         glyph(x, y, light, eyeIris);
+        continue;
+      }
+
+      if (u < -.63 && distance > .87 + .045 * Math.sin(dy * .2) && dy < 5) {
+        const folds = Math.sin(dx * .7 + dy * .22) * .13 + Math.sin(dx * .19 - dy * .43) * .11;
+        glyph(x, y, .24 + depth * .39 - u * .16 - v * .12 + folds + grain * .09, nerveFlesh);
         continue;
       }
 
