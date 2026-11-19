@@ -19,7 +19,9 @@
   <link rel="preload" href="assets/fonts/ibm-plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/instrument-serif-italic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="mobile.css">
   <script defer src="projects.js"></script>
+  <script defer src="mobile.js"></script>
   <script defer src="corner-art.js"></script>
   <script defer src="postmodern-eye.js"></script>
   <script defer src="postmodern-ships.js"></script>
@@ -68,6 +70,68 @@
     </main>
     <p id="unsupported">The project grid needs a wider, taller browser window. A layout for smaller screens is coming.</p>
     <noscript>Enable JavaScript to explore the project windows.</noscript>
+  </div>
+  <!-- Small screens: shown instead of .shell by mobile.css. -->
+  <div id="mobile">
+    <section class="dive" aria-labelledby="dive-title">
+      <div class="hud" aria-hidden="true">
+        <span>DEPTH <b class="depth">1,000m</b></span>
+        <span class="count">PROMPT 1 OF 1</span>
+        <span>SCORE <b class="score">100</b></span>
+      </div>
+      <h1 id="dive-title" class="visually-hidden">Name a SWE: Rishabh Mohan, the Krillion.</h1>
+      <div class="card" aria-hidden="true">
+        <p class="count">PROMPT 1 OF 1</p>
+        <p class="prompt">Name a SWE</p>
+        <div class="answer-row">
+          <span class="answer"><span class="typed">Rishabh Mohan</span><span class="caret"></span></span>
+          <span class="timer">25</span>
+          <span class="dive-btn">DIVE</span>
+        </div>
+      </div>
+      <div class="landed" aria-hidden="true">
+        <svg class="badge" viewBox="0 0 16 10" shape-rendering="crispEdges">
+          <path fill="#ffd166" d="M3 3h9v1h2v1h1v1h-1v1h-2v1H3V7H1V6h1V4h1z"/>
+          <path fill="#ffe9a8" d="M4 4h7v1H4z"/>
+          <path fill="#050a14" d="M12 5h1v1h-1z"/>
+          <path fill="#ffd166" d="M13 2h1v1h-1zM14 1h1v1h-1zM4 8h1v2H4zM7 8h1v2H7zM10 8h1v2h-1zM0 2h1v1h1v1H1V3H0z"/>
+        </svg>
+        <p class="title">ONE IN A KRILLION</p>
+        <p class="who">“Rishabh Mohan”</p>
+        <p class="pts"><span>+100 PTS</span> · sink 1,000m</p>
+        <p class="fact">Purdue CS ’30. Builds things.</p>
+      </div>
+      <a class="descend" href="#m-projects">DESCEND ▼</a>
+      <p class="credit">inspired by <a href="https://krillion.io/">krillion.io</a></p>
+    </section>
+
+    <p class="zone" aria-hidden="true">200m · the project reef</p>
+    <section id="m-projects" aria-labelledby="m-projects-title">
+      <h2 id="m-projects-title">Top projects</h2>
+      <div class="project-list"></div>
+    </section>
+
+    <p class="zone" aria-hidden="true">1,000m · THE RESUME ZONE</p>
+    <section id="m-resume" aria-labelledby="m-resume-title">
+      <div class="section-head">
+        <h2 id="m-resume-title">Resume</h2>
+        <a class="download" href="assets/Rishabh-Mohan-Resume.pdf" download>Download PDF</a>
+      </div>
+      <div class="resume"></div>
+    </section>
+
+    <p class="zone" aria-hidden="true">4,000m · the log book</p>
+    <section id="m-blog" aria-labelledby="m-blog-title">
+      <h2 id="m-blog-title">Blog</h2>
+      <div class="posts"></div>
+    </section>
+
+    <footer class="floor">
+      <pre aria-hidden="true">      o
+   o  .
+ ><((('>   ~ the trench floor ~</pre>
+      <nav aria-label="Social links"><a href="https://github.com/rishabh-mohan">GitHub</a> · <a href="https://www.linkedin.com/in/mohan-rishabh">LinkedIn</a> · <a href="assets/Rishabh-Mohan-Resume.pdf">Resume</a></nav>
+    </footer>
   </div>
 </body>
 </html>
