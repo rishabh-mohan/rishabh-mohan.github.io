@@ -131,6 +131,9 @@
   }
   .chip span { color: var(--m-pink); }
 
+  .replay { font: inherit; color: var(--m-cyan); background: none; border: 0; padding: 6px 4px; cursor: pointer; text-decoration: underline; }
+  .replay:focus-visible { outline: 2px solid var(--m-pink); outline-offset: 2px; }
+
   /* Result */
   .landed { position: absolute; z-index: 3; top: 25%; left: 0; right: 0; margin: 0 auto; width: min(100% - 32px, 420px); text-align: center; }
   .landed::before { content: ""; position: absolute; z-index: -1; left: 50%; top: -42px; width: 150px; height: 150px; margin-left: -75px; background: radial-gradient(closest-side, rgba(255,209,102,.4), transparent); animation: m-breathe 2.6s var(--m-smooth) infinite; }
