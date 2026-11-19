@@ -35,13 +35,31 @@ const posts = [];
     el('summary', { textContent: post.title }), el('time', { dateTime: post.date, textContent: post.date }),
     ...post.body.map(text => el('p', { textContent: text })))) : [el('p', { className: 'empty', textContent: 'No posts yet. The first one is still sinking.' })]));
 
-  // Opening: plays once per session on small screens, never under reduced motion. Tap to skip.
   const dive = root.querySelector('.dive');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  dive.querySelector('.bubbles').append(...Array.from({ length: 9 }, () => {
+    const size = 4 + Math.random() * 9;
+    const bubble = el('span');
+    bubble.style.cssText = `--x:${Math.random() * 100}%;--s:${size}px;--t:${7 + Math.random() * 7}s;--delay:${-Math.random() * 14}s`;
+    return bubble;
+  }));
+
+  // Sections drift up as they scroll into view.
+  if (!reduced && 'IntersectionObserver' in window) {
+    const watcher = new IntersectionObserver(entries => entries.forEach(entry => {
+      if (entry.isIntersecting) { entry.target.classList.add('seen'); watcher.unobserve(entry.target); }
+    }), { rootMargin: '0px 0px -10% 0px' });
+    root.querySelectorAll('h2, .project, .work-zone, .resume > :not(.work-zone), .post, .empty, .zone, .floor').forEach(node => {
+      node.classList.add('reveal'); watcher.observe(node);
+    });
+  }
+
+  // Opening: plays once per session on small screens, never under reduced motion. Tap to skip.
   const depth = dive.querySelector('.depth'), score = dive.querySelector('.score'), typed = dive.querySelector('.typed');
   const small = matchMedia('(max-width: 899px), (max-height: 639px), (max-aspect-ratio: 5/4)').matches;
   let seen = false;
   try { seen = sessionStorage.getItem('dove') === '1'; sessionStorage.setItem('dove', '1'); } catch {}
-  if (!small || seen || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!small || seen || reduced) return;
 
   const timers = [];
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
@@ -49,7 +67,7 @@ const posts = [];
   const name = typed.textContent;
   const finish = () => {
     timers.forEach(clearTimeout);
-    dive.classList.remove('playing', 'zap');
+    dive.classList.remove('playing', 'zap', 'sinking');
     typed.textContent = name; depth.textContent = '1,000m'; score.textContent = '100';
     removeEventListener('pointerdown', finish); removeEventListener('keydown', finish);
   };
@@ -60,7 +78,9 @@ const posts = [];
   let t = 900;
   [...name].forEach((_, i) => at(t += 95 + Math.random() * 70, () => { typed.textContent = name.slice(0, i + 1); }));
   at(t += 650, () => dive.classList.add('zap'));
-  at(t += 900, () => { dive.classList.replace('playing', 'landing'); dive.classList.remove('zap'); });
-  for (let step = 1; step <= 8; step++) at(t + 700 + step * 140, () => { depth.textContent = (step * 125).toLocaleString('en-US') + 'm'; kick(depth, 'jolt'); });
-  at(t + 1950, () => { score.textContent = '100'; kick(score, 'slam'); finish(); });
+  // The sea scrolls up 2.4s while the answer sinks and the depth counter cranks.
+  at(t += 750, () => dive.classList.add('sinking'));
+  for (let step = 1; step <= 8; step++) at(t + step * 290, () => { depth.textContent = (step * 125).toLocaleString('en-US') + 'm'; kick(depth, 'jolt'); });
+  at(t += 2600, () => { dive.classList.remove('playing', 'zap', 'sinking'); dive.classList.add('landing'); });
+  at(t + 900, () => { score.textContent = '100'; kick(score, 'slam'); finish(); });
 })();

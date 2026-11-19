@@ -14,9 +14,19 @@
   .shell { display: none; }
   #mobile {
     display: block; min-height: 100dvh; font: 20px/1.35 "VT323", ui-monospace, monospace; color: var(--m-text);
-    /* Water darkens as you scroll down. */
-    background: linear-gradient(#0b1a33 0, var(--m-bg) 100vh, #02050b 100%);
+    background: linear-gradient(var(--m-bg), #02050b);
   }
+  /* Marine snow drifting down behind everything below the opening. */
+  #mobile::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(200,220,255,.4) 1px, transparent 1.6px),
+      radial-gradient(circle at 70% 60%, rgba(200,220,255,.25) 1.2px, transparent 2px),
+      radial-gradient(circle at 45% 80%, rgba(77,227,255,.25) 1px, transparent 1.6px);
+    background-size: 180px 220px, 240px 300px, 140px 160px;
+    animation: m-snow 60s linear infinite;
+  }
+  #mobile > * { position: relative; z-index: 1; }
   #mobile a { color: var(--m-cyan); }
   #mobile a:focus-visible { outline: 2px solid var(--m-pink); outline-offset: 3px; }
   #mobile h2 { font: inherit; font-size: 34px; letter-spacing: .04em; margin: 0 0 14px; color: var(--m-text); text-shadow: 0 0 14px rgba(77,227,255,.35); }
@@ -63,6 +73,51 @@
   .dive.landing .credit { animation: m-rise-in 500ms 1000ms var(--m-over) both; }
   .jolt { animation: m-jolt 120ms var(--m-over); }
   .slam { animation: m-slam 500ms var(--m-over); }
+
+  /* The sea: 3 screens tall. Waterline at 10%, 1,000m at 83%. It rests scrolled to the deep end. */
+  .sea {
+    position: absolute; left: 0; right: 0; top: 0; height: 300%; z-index: 0; transform: translateY(-66.6667%);
+    background:
+      repeating-linear-gradient(to bottom, rgba(125,147,184,.45) 0 1px, transparent 1px 36px) right bottom / 8px 90% no-repeat,
+      linear-gradient(#5fb6ec, #bfe8ff 9.8%, #2c8ccc 10%, #12507f 20%, #0a2a4f 40%, #071732 66%, var(--m-bg) 100%);
+  }
+  .sea::before { /* light rays under the surface */
+    content: ""; position: absolute; left: -20%; right: -20%; top: 10%; height: 22%;
+    background: repeating-linear-gradient(100deg, rgba(255,255,255,.13) 0 22px, transparent 22px 70px);
+    -webkit-mask-image: linear-gradient(#000, transparent); mask-image: linear-gradient(#000, transparent);
+    animation: m-rays 9s ease-in-out infinite alternate;
+  }
+  .sea::after { /* waves */
+    content: ""; position: absolute; left: 0; right: 0; top: calc(10% - 8px); height: 10px;
+    background: radial-gradient(circle at 12px -2px, transparent 9px, #2c8ccc 10px) 0 0 / 24px 10px repeat-x;
+    animation: m-waves 3s linear infinite;
+  }
+  .cloud { position: absolute; top: 3.4%; left: 8%; width: 56px; height: 10px; background: #fff; opacity: .9; animation: m-cloud 40s linear infinite alternate; }
+  .cloud::before { content: ""; position: absolute; left: 12px; top: -9px; width: 26px; height: 9px; background: inherit; }
+  .cloud.c2 { top: 6%; left: 62%; width: 40px; animation-duration: 55s; animation-direction: alternate-reverse; }
+  .mark { position: absolute; right: 14px; top: calc(10% + 73% * var(--d) / 1000); transform: translateY(-50%); font-size: 14px; color: var(--m-muted); }
+  .kelp { position: absolute; bottom: 0; left: -10px; width: 34%; height: 12%; overflow: visible; }
+  .kelp.right { left: auto; right: -10px; transform: scaleX(-1); }
+  .kelp path { fill: none; stroke: #0d2546; stroke-width: 7; stroke-linecap: round; transform-box: fill-box; transform-origin: bottom; animation: m-sway 5s ease-in-out infinite alternate; }
+  .bubbles { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; transition: box-shadow 1s ease-out; }
+  .bubbles span { position: absolute; bottom: -20px; left: var(--x); width: var(--s); height: var(--s); border: 1.5px solid rgba(168,186,210,.5); border-radius: 50%; animation: m-bubble var(--t) linear var(--delay) infinite; }
+  .dive.landing .bubbles { box-shadow: inset 70px 0 90px -70px rgba(255,209,102,.35), inset -70px 0 90px -70px rgba(255,209,102,.35); }
+  .hud > span:not(.count) { background: rgba(13,24,48,.85); border: 2px solid var(--m-panel2); padding: 0 8px; }
+  .hud .count { text-shadow: 0 1px 0 #050a14; }
+  .chip { display: none; position: absolute; top: 46%; left: 50%; padding: 6px 12px; font-size: 22px; white-space: nowrap; color: var(--m-gold); background: rgba(13,24,48,.92); border: 2px solid var(--m-panel2); }
+  .dive.sinking .chip { display: block; animation: m-chip-in 500ms var(--m-pop) both, m-gold-pulse 1s var(--m-smooth) infinite, m-wobble 1.2s ease-in-out infinite; }
+  .hud, .card, .landed, .descend, .credit { position: relative; z-index: 1; }
+  .chip { z-index: 2; }
+  .landed::before { content: ""; position: absolute; z-index: -1; left: 50%; top: -38px; width: 170px; height: 170px; margin-left: -85px; background: radial-gradient(closest-side, rgba(255,209,102,.4), transparent); animation: m-breathe 2.6s var(--m-smooth) infinite; }
+  .descend { border-color: var(--m-pink) !important; background: rgba(13,24,48,.9); box-shadow: 0 0 14px rgba(255,93,143,.45) !important; }
+
+  .dive.playing .sea { transform: none; }
+  .dive.playing.sinking .sea { transform: translateY(-66.6667%); transition: transform 2.4s cubic-bezier(.45, 0, .25, 1); }
+  .dive.playing.zap .card { animation: m-zap 280ms steps(3), m-card-gone 600ms 300ms ease-in both; }
+
+  /* Sections drift up as they scroll in (class added by mobile.js). */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease-out, transform .6s var(--m-over); }
+  .reveal.seen { opacity: 1; transform: none; }
 
   /* Depth markers between sections. */
   .zone { width: min(100% - 32px, 560px); margin: 36px auto 18px; display: flex; align-items: center; gap: 10px; color: var(--m-muted); font-size: 16px; }
@@ -117,6 +172,17 @@
 @keyframes m-jolt { 45% { transform: translateY(3px) scale(1.06); } }
 @keyframes m-slam { 35% { color: #ffd166; transform: scale(1.4) rotate(-2deg); } }
 
+@keyframes m-snow { to { background-position: 0 220px, 0 300px, 0 160px; } }
+@keyframes m-rays { to { transform: translateX(40px) skewX(-4deg); } }
+@keyframes m-waves { to { background-position: 24px 0; } }
+@keyframes m-cloud { to { transform: translateX(30vw); } }
+@keyframes m-sway { from { transform: skewX(-4deg); } to { transform: skewX(4deg); } }
+@keyframes m-bubble { 50% { margin-left: 8px; } 100% { transform: translateY(-110dvh); margin-left: 0; } }
+@keyframes m-chip-in { from { opacity: 0; transform: translateX(-50%) scale(.5); } }
+@keyframes m-wobble { 0%, 100% { transform: translateX(-50%) rotate(-2deg); } 50% { transform: translateX(-50%) translateY(6px) rotate(2deg); } }
+@keyframes m-gold-pulse { 0%, 100% { box-shadow: 0 0 0 2px #ffd166, 0 0 20px rgba(255,209,102,.5); } 50% { box-shadow: 0 0 0 2px #ffe9a8, 0 0 44px rgba(255,209,102,.9); } }
+@keyframes m-breathe { 0%, 100% { opacity: .5; transform: scale(.88); } 50% { opacity: 1; transform: scale(1.08); } }
+
 @media (prefers-reduced-motion: reduce) {
-  #mobile *, #mobile *::before, #mobile *::after { animation: none !important; }
+  #mobile *, #mobile *::before, #mobile *::after, #mobile::before { animation: none !important; }
 }
