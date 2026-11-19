@@ -75,33 +75,41 @@
   <div id="mobile">
     <section class="dive" aria-labelledby="dive-title">
       <div class="sea" aria-hidden="true">
-        <span class="cloud c1"></span><span class="cloud c2"></span>
-        <span class="mark" style="--d:200">200m</span><span class="mark" style="--d:400">400m</span>
-        <span class="mark" style="--d:600">600m</span><span class="mark" style="--d:800">800m</span>
-        <span class="mark" style="--d:1000">1,000m</span>
-        <svg class="kelp" viewBox="0 0 120 200" preserveAspectRatio="none">
-          <path d="M20 200C10 160 34 130 22 95S30 40 26 10M52 200c8-40-14-70 0-110s-6-60 4-80M96 200c-10-50 16-80 2-120"/>
-        </svg>
-        <svg class="kelp right" viewBox="0 0 120 200" preserveAspectRatio="none">
-          <path d="M30 200c12-45-12-75 2-115s-4-55 6-75M80 200C70 150 98 125 84 80S92 30 88 5"/>
-        </svg>
+        <span class="sun"></span>
+        <svg class="cloud" style="--x:6%;--y:1.2%;--w:92px" viewBox="0 0 12 4" shape-rendering="crispEdges"><path fill="#fff" d="M4 0h3v1h2v1h3v2H0V2h2V1h2z"/><path fill="#d3ecfb" d="M0 3h12v1H0z"/></svg>
+        <svg class="cloud" style="--x:58%;--y:2.6%;--w:70px;--t:70s" viewBox="0 0 12 4" shape-rendering="crispEdges"><path fill="#fff" d="M4 0h3v1h2v1h3v2H0V2h2V1h2z"/><path fill="#d3ecfb" d="M0 3h12v1H0z"/></svg>
+        <svg class="cloud" style="--x:28%;--y:4.2%;--w:54px;--t:90s" viewBox="0 0 12 4" shape-rendering="crispEdges"><path fill="#fff" d="M4 0h3v1h2v1h3v2H0V2h2V1h2z"/><path fill="#d3ecfb" d="M0 3h12v1H0z"/></svg>
+        <svg class="boat" viewBox="0 0 20 12" shape-rendering="crispEdges"><path fill="#ff5d8f" d="M10 0h4v2h-4z"/><path fill="#0d1830" d="M9 0h1v5H9zM6 5h8v3H6zM0 8h20v1h-1v1h-1v1H3v-1H2V9H0z"/><path fill="#e8f1ff" d="M7 6h2v1H7zM11 6h2v1h-2z"/></svg>
+        <div class="kelps"></div>
+        <div class="fish"></div>
+        <span class="mark" style="--d:100">-100m</span><span class="mark" style="--d:200">-200m</span><span class="mark" style="--d:300">-300m</span>
+        <span class="mark" style="--d:400">-400m</span><span class="mark" style="--d:500">-500m</span><span class="mark" style="--d:600">-600m</span>
+        <span class="mark" style="--d:700">-700m</span><span class="mark" style="--d:800">-800m</span><span class="mark" style="--d:900">-900m</span>
+        <span class="mark" style="--d:1000">-1,000m</span><span class="mark" style="--d:1100">-1,100m</span>
+        <span class="note" style="--d:120">the light thins out</span>
+        <span class="note" style="--d:480">THE TWILIGHT ZONE</span>
+        <span class="note" style="--d:820">no sunlight past here</span>
+        <span class="tier" style="--d:300;--c:#7d93b8">SOLID PICK · 40</span>
+        <span class="tier" style="--d:640;--c:#b18cff">DEEP CUT · 85</span>
+        <span class="tier" style="--d:1000;--c:#ffd166">ONE IN A KRILLION · 100</span>
       </div>
       <div class="bubbles" aria-hidden="true"></div>
-      <div class="chip" aria-hidden="true">“Rishabh Mohan” ▼</div>
+      <div class="chip" aria-hidden="true">“RISHABH MOHAN” <span>▼</span></div>
       <div class="hud" aria-hidden="true">
-        <span>DEPTH <b class="depth">1,000m</b></span>
-        <span class="count">PROMPT 1 OF 1</span>
-        <span>SCORE <b class="score">100</b></span>
+        <div class="pod"><small>DEPTH</small><b class="depth">1,000m</b></div>
+        <div class="hud-mid"><span class="dots"><i></i></span><small>PROMPT 1 OF 1</small></div>
+        <div class="pod right"><small>SCORE</small><b class="score">100</b></div>
       </div>
       <h1 id="dive-title" class="visually-hidden">Name a SWE: Rishabh Mohan, the Krillion.</h1>
       <div class="card" aria-hidden="true">
-        <p class="count">PROMPT 1 OF 1</p>
+        <p class="rnd">PROMPT 1 OF 1</p>
         <p class="prompt">Name a SWE</p>
-        <div class="answer-row">
-          <span class="answer"><span class="typed">Rishabh Mohan</span><span class="caret"></span></span>
-          <span class="timer">25</span>
-          <span class="dive-btn">DIVE</span>
-        </div>
+        <p class="hint">▼ the rarest answer sinks deepest ▼</p>
+      </div>
+      <div class="dock" aria-hidden="true">
+        <span class="sonar"><span class="timer">25</span></span>
+        <span class="input-col"><span class="answer"><span class="typed">Rishabh Mohan</span><span class="caret"></span></span><span class="fuse"></span></span>
+        <span class="dive-btn">DIVE</span>
       </div>
       <div class="landed" aria-hidden="true">
         <svg class="badge" viewBox="0 0 16 10" shape-rendering="crispEdges">
@@ -114,9 +122,11 @@
         <p class="who">“Rishabh Mohan”</p>
         <p class="pts"><span>+100 PTS</span> · sink 1,000m</p>
         <p class="fact">Purdue CS ’30. Builds things.</p>
+        <span class="you">YOU ◂</span>
       </div>
       <a class="descend" href="#m-projects">DESCEND ▼</a>
       <p class="credit">inspired by <a href="https://krillion.io/">krillion.io</a></p>
+      <div class="crt" aria-hidden="true"></div>
     </section>
 
     <p class="zone" aria-hidden="true">200m · the project reef</p>
