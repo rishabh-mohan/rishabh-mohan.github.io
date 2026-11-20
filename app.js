@@ -18,7 +18,6 @@ const supported = matchMedia('(min-width: 900px) and (min-height: 640px) and (as
 const krillView = document.documentElement.classList.contains('krill-view');
 const order = projects.map((_, index) => index);
 let selected = null;
-let dragged = null;
 let openSlot = null;
 let busy = false;
 let animationToken = 0;
@@ -176,7 +175,6 @@ function makeCard(slot) {
   const title = node('h2');
   title.id = 'slot-title-' + slot;
   const grip = node('span', '⠿', 'grip');
-  grip.draggable = true;
   grip.title = 'Drag slot ' + (slot + 1);
   grip.setAttribute('aria-hidden', 'true');
   const button = node('button', '↗');
@@ -197,32 +195,86 @@ function makeCard(slot) {
   preview.append(node('p', '', 'tagline'), caption, node('div', '', 'preview-details'));
   card.append(bar, preview);
 
-  grip.addEventListener('dragstart', event => {
-    if (busy) { event.preventDefault(); return; }
-    dragged = slot;
-    selectSlot(slot);
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', String(slot));
-    event.dataTransfer.setDragImage(card, card.clientWidth / 2, 18);
-  });
-  grip.addEventListener('dragend', endDrag);
-  card.addEventListener('dragover', event => {
-    if (dragged === null || dragged === slot || busy) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-    card.classList.add('destination');
-  });
-  card.addEventListener('dragleave', event => {
-    if (!card.contains(event.relatedTarget)) card.classList.remove('destination');
-  });
-  card.addEventListener('drop', event => {
-    if (dragged === null || busy) return;
-    event.preventDefault();
-    const from = dragged;
-    endDrag();
-    if (from !== slot) void runSwaps([[from, slot]]);
-  });
+  grip.addEventListener('pointerdown', event => startDrag(event, slot, card, grip));
   return card;
+}
+
+// Pointer drag: the window follows the pointer and leaves its cell empty. Dropping on another window
+// swaps them; dropping anywhere else (or Escape) glides it back to its cell.
+let drag = null;
+function startDrag(event, slot, card, grip) {
+  if (event.button !== 0 || busy || openSlot !== null || drag) return;
+  event.preventDefault();
+  grip.setPointerCapture(event.pointerId);
+  drag = { slot, card, grip, id: event.pointerId, x: event.clientX, y: event.clientY, moved: false, over: null,
+    rects: Array.from(grid.children, c => c.getBoundingClientRect()) };
+  grip.addEventListener('pointermove', moveDrag);
+  grip.addEventListener('pointerup', dropDrag);
+  grip.addEventListener('pointercancel', cancelDrag);
+  grip.addEventListener('lostpointercapture', cancelDrag);
+}
+
+function moveDrag(event) {
+  if (!drag || event.pointerId !== drag.id) return;
+  const dx = event.clientX - drag.x;
+  const dy = event.clientY - drag.y;
+  if (!drag.moved) {
+    if (Math.hypot(dx, dy) < 4) return;
+    drag.moved = true;
+    selectSlot(drag.slot);
+    drag.card.classList.add('lifted');
+    document.documentElement.classList.add('dragging');
+  }
+  drag.card.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+  const hit = drag.rects.findIndex((r, i) => i !== drag.slot && event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom);
+  const over = hit < 0 ? null : hit;
+  if (over !== drag.over) {
+    if (drag.over !== null) grid.children[drag.over].classList.remove('destination');
+    if (over !== null) grid.children[over].classList.add('destination');
+    drag.over = over;
+  }
+}
+
+function finishDrag() {
+  const d = drag;
+  drag = null;
+  d.grip.removeEventListener('pointermove', moveDrag);
+  d.grip.removeEventListener('pointerup', dropDrag);
+  d.grip.removeEventListener('pointercancel', cancelDrag);
+  d.grip.removeEventListener('lostpointercapture', cancelDrag);
+  if (d.grip.hasPointerCapture(d.id)) d.grip.releasePointerCapture(d.id);
+  document.documentElement.classList.remove('dragging');
+  return d;
+}
+
+function dropDrag(event) {
+  if (!drag || event.pointerId !== drag.id) return;
+  const d = finishDrag();
+  if (!d.moved) return;
+  if (d.over !== null && !busy) {
+    const at = d.card.getBoundingClientRect();
+    d.card.style.transform = '';
+    d.card.classList.remove('lifted');
+    void runSwaps([[d.slot, d.over]], undefined, at);
+  } else settle(d.card);
+}
+
+function cancelDrag(event) {
+  if (!drag || (event && event.pointerId !== undefined && event.pointerId !== drag.id)) return;
+  const d = finishDrag();
+  if (d.moved) settle(d.card);
+}
+
+// Glide a lifted window back to its own cell.
+function settle(card) {
+  grid.querySelectorAll('.destination').forEach(c => c.classList.remove('destination'));
+  selectSlot(null);
+  const from = card.style.transform;
+  card.style.transform = '';
+  status.textContent = 'Move canceled.';
+  if (reduced.matches || !from) { card.classList.remove('lifted'); return; }
+  const done = () => card.classList.remove('lifted');
+  card.animate([{ transform: from }, { transform: 'translate(0,0)' }], { duration: 240, easing: 'cubic-bezier(.2,.75,.3,1)' }).finished.then(done, done);
 }
 
 function selectSlot(slot) {
@@ -232,7 +284,7 @@ function selectSlot(slot) {
 }
 
 function endDrag() {
-  dragged = null;
+  if (drag) cancelDrag();
   selectSlot(null);
   grid.querySelectorAll('.destination').forEach(card => card.classList.remove('destination'));
 }
@@ -263,7 +315,8 @@ async function typeTo(element, target, duration, valid = () => true) {
   element.classList.remove('cursor');
 }
 
-async function runSwaps(pairs, nextTheme) {
+// dropAt: where a dragged window was let go, so it slides into its new cell from there.
+async function runSwaps(pairs, nextTheme, dropAt) {
   if (busy || openSlot !== null) return;
   busy = true;
   shuffleButton.disabled = true;
@@ -274,12 +327,12 @@ async function runSwaps(pairs, nextTheme) {
       const cards = [grid.children[from], grid.children[to]];
       cards.forEach(card => card.classList.add('destination'));
       const before = cards.map(card => card.getBoundingClientRect());
-      await Promise.all(cards.flatMap(card => Array.from(card.querySelectorAll('h2, .tagline, .copy'), el => typeTo(el, '', 90))));
+      if (!dropAt) await Promise.all(cards.flatMap(card => Array.from(card.querySelectorAll('h2, .tagline, .copy'), el => typeTo(el, '', 90))));
       [order[from], order[to]] = [order[to], order[from]];
       paintCard(from);
       paintCard(to);
       const motion = cards.map((card, index) => {
-        const other = before[1 - index];
+        const other = index === 1 && dropAt ? dropAt : before[1 - index];
         const at = before[index];
         if (reduced.matches) return Promise.resolve();
         return card.animate([
@@ -314,6 +367,7 @@ function shuffleTo(theme) {
 }
 
 document.addEventListener('keydown', event => {
+  if (drag && event.key === 'Escape') { event.preventDefault(); cancelDrag(); return; }
   if (event.defaultPrevented || event.repeat || !supported.matches || krillView) return;
   if (openSlot !== null) {
     if (event.key === 'Escape') requestClose();
