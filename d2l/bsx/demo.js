@@ -5,6 +5,23 @@
   const F = window.BSX_FAKE;
   const q = new URLSearchParams(location.search);
   window.BSX_DEV_FRAME = true; // the wrapper normally refuses to run inside a frame
+  // Inside the portfolio's window, page changes replace the history entry so the site's × and Back close the demo
+  // in one step. Opened full size (not framed), the demo keeps normal history.
+  const framed = window.top !== window;
+  window.BSX_LOC = {
+    set hash(v) { if (framed) location.replace("#" + String(v).replace(/^#/, "")); else location.hash = v; },
+    set href(v) { if (framed) location.replace(v); else location.href = v; },
+    assign(v) { if (framed) location.replace(v); else location.assign(v); },
+  };
+  if (framed) document.addEventListener("click", (ev) => {
+    if (ev.defaultPrevented || ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+    const a = ev.composedPath().find((el) => el && el.tagName === "A");
+    if (!a || typeof a.href !== "string" || !a.href || (a.target && a.target !== "_self") || a.hasAttribute("download")) return;
+    let u; try { u = new URL(a.href, location.href); } catch { return; }
+    if (u.origin !== location.origin) return;
+    ev.preventDefault();
+    if (u.href !== location.href) location.replace(u.href);
+  });
   localStorage.setItem("XSRF.Token", "demo-xsrf");
   const preset = { theme: q.get("bsxtheme") || "dark", wideCards: Boolean(q.get("bsxwide")), gradescope: true, ed: { on: true, token: "demo-token", region: "us", map: {} } };
   const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };

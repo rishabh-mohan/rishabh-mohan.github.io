@@ -805,7 +805,7 @@
     const listed = ui.state.showAll ? courses : ui.focusCourses(courses);
     const choices = listed.includes(course) || !courses.includes(course) ? listed : [...listed, course];
     const picker = h('select', { class: 'txt pick', 'aria-label': 'Course' }, choices.map((c) => h('option', { value: String(c.id), selected: c.id === id }, nameOf(c))));
-    picker.addEventListener('change', () => (location.hash = courseHref(Number(picker.value), 'grades')));
+    picker.addEventListener('change', () => (BSX_LOC.hash = courseHref(Number(picker.value), 'grades')));
     const byItem = new Map(work.filter((a) => a.grade_item_id != null).map((a) => [String(a.grade_item_id), a]));
     // Scores Brightspace has not posted but an outside copy has (Gradescope, folded into the
     // Brightspace assignment): used in their place, scaled to the item's points, and tagged.

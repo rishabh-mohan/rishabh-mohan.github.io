@@ -467,7 +467,7 @@
     const open = (r) => {
       close();
       if (r.external) window.open(r.href, '_blank', 'noopener,noreferrer');
-      else location.href = r.href;
+      else BSX_LOC.href = r.href;
     };
     const draw = () => {
       if (!index) return;

@@ -607,7 +607,7 @@ BSX.ui = (() => {
     try {
       sessionStorage.setItem('bsx.off', '1');
     } catch {}
-    location.assign(`${u}#brightspace`);
+    BSX_LOC.assign(`${u}#brightspace`);
   }
   // The Brightspace page that matches the wrapper page being shown, for the Brightspace switch.
   function brightspacePage(r) {
@@ -659,7 +659,7 @@ BSX.ui = (() => {
     if (u.pathname === location.pathname && u.search === location.search && u.hash.startsWith('#/')) return; // a wrapper route
     if (RAW.test(u.pathname)) return;
     ev.preventDefault();
-    location.hash = `#/open?u=${encodeURIComponent(u.pathname + u.search)}`;
+    BSX_LOC.hash = `#/open?u=${encodeURIComponent(u.pathname + u.search)}`;
   }
 
   // The "open" view: a Brightspace page in a frame, under Canvas's navigation. Brightspace's
@@ -683,9 +683,9 @@ BSX.ui = (() => {
       } catch {
         return; // another site (a tool or the sign-in page): leave it be
       }
-      if (/^\/d2l\/login/i.test(path)) return location.assign(path); // signed out: sign in at the top
+      if (/^\/d2l\/login/i.test(path)) return BSX_LOC.assign(path); // signed out: sign in at the top
       const target = detectEntry(f.contentWindow.location.pathname, f.contentWindow.location.search);
-      if (target && path !== r.u) return location.assign(path); // a page the wrapper replaces
+      if (target && path !== r.u) return BSX_LOC.assign(path); // a page the wrapper replaces
       if (path !== r.u) history.replaceState(null, '', `${location.pathname}${location.search}#/open?u=${encodeURIComponent(path)}`);
       const t = (doc.title || '').replace(/\s*-\s*[^-]*$/, '').trim();
       title.textContent = t || 'Brightspace';
@@ -755,7 +755,7 @@ BSX.ui = (() => {
       h('div', { class: 'seg' }, [false, true].map((on) => h('button', { type: 'button', class: Boolean(settings.gradescope) === on ? 'on' : null, onclick: () => { settings.gradescope = on; saveSettings(); reload(); openTray('account'); } }, on ? 'Read it' : 'Off'))),
       h('p', { class: 'muted small', style: 'margin:8px 4px 0' }, 'When on, courses with a Gradescope link also show your Gradescope assignments, due dates and scores. It reads two Gradescope pages with your own Gradescope sign-in and changes nothing there.'),
       h('div', { class: 'traylabel' }, 'Ed Discussion'),
-      h('div', { class: 'seg' }, [false, true].map((on) => h('button', { type: 'button', class: Boolean(settings.ed.on) === on ? 'on' : null, onclick: () => { settings.ed.on = on; saveSettings(); if (on && !settings.ed.token) { openTray(null); location.hash = '#/connections'; return; } reload(); openTray('account'); } }, on ? 'Read it' : 'Off'))),
+      h('div', { class: 'seg' }, [false, true].map((on) => h('button', { type: 'button', class: Boolean(settings.ed.on) === on ? 'on' : null, onclick: () => { settings.ed.on = on; saveSettings(); if (on && !settings.ed.token) { openTray(null); BSX_LOC.hash = '#/connections'; return; } reload(); openTray('account'); } }, on ? 'Read it' : 'Off'))),
       h('a', { class: 'trayitem', href: '#/connections' }, 'Connected sites: Ed token, course matching, overlaps'),
       h('div', { class: 'traylabel' }, 'Pages'),
       h('a', { class: 'trayitem', href: '#/grades' }, 'Grades for all courses'),
@@ -1040,7 +1040,7 @@ BSX.ui = (() => {
     const k = ev.key;
     if (pendingG && Date.now() - pendingG < 1200 && GO[k]) {
       pendingG = 0;
-      location.hash = GO[k];
+      BSX_LOC.hash = GO[k];
       ev.preventDefault();
       return;
     }
