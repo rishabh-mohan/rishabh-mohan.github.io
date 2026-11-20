@@ -1,11 +1,14 @@
 // Mobile opening: a Krillion-style "Name a SWE" dive.
-// The sea is drawn on a canvas, and everything in it (krill, boat, clouds, kelp, coral, fish, rocks, bubbles) is
-// homemade ASCII set in VT323. Labels and lines live in .world, which moves with the same camera.
-// Plays once per session, tap to skip, "dive again" replays.
+// The sea is a shaded ASCII field on a canvas, like the desktop scenery: every shape (clouds, sun, boat, rock
+// ledges and canyon walls, kelp, coral) is stamped into a grid of cells with a light value, then drawn as a glyph
+// from the same density ramp and a 5-tone palette. Solid materials get a dark cell fill so they read as mass.
+// Krill, fish and bubbles are hand-drawn ASCII sprites shaded row by row. Labels and lines live in .world, which
+// moves with the same camera. Plays once per session, tap to skip, "dive again" replays.
 (() => {
   const dive = document.querySelector('#mobile .dive');
   if (!dive) return;
-  const MPX = 2, SURF = 160, FONT = '"VT323", ui-monospace, monospace'; // css px per metre, waterline (css px from top)
+  const MPX = 2, SURF = 160; // css px per metre, waterline (css px from top of the world)
+  const FONT = '600 8px "IBM Plex Mono", ui-monospace, monospace', SPRITE = '"IBM Plex Mono", ui-monospace, monospace';
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canvas = dive.querySelector('.scene'), ctx = canvas.getContext('2d');
   const world = dive.querySelector('.world');
@@ -15,79 +18,235 @@
   const depthY = m => SURF + m * MPX; // css px in world space
   const rand = (a, b) => a + Math.random() * (b - a);
   const pick = list => list[Math.random() * list.length | 0];
+  const clamp = v => v < 0 ? 0 : v > 1 ? 1 : v;
+  const smooth = (a, b, x) => { const k = clamp((x - a) / (b - a)); return k * k * (3 - 2 * k); };
 
-  // ---------- ASCII art ----------
-  const KRILL_L = [
-    ' \\\\ ___',
-    '=(o  ``-.',
-    '  `-,,,_ )',
-    "    ///-'",
+  // ---------- Sprites ----------
+  const KRILL = [
+    '`.',
+    "  `.  _.-''''-._",
+    '----(@ ):):):):)`-.',
+    '    `/,/,/,/,`-.  `\\',
+    "               `=-<'",
   ];
-  const KRILL_R = [
-    '    ___ //',
-    "  .-''  o)=",
-    ' ( _,,,-`',
-    " `-\\\\\\",
-  ];
-  const SUN = ['\\ | /', '-( )-', '/ | \\'];
-  const CLOUDS = [
-    ['    .--.', ' .-(    )-.', "(___.__)__.)"],
-    ['   _  _', ' _( )( )_', '(___..___)'],
-    ['  .-.', ' (   ).', '(___(__)'],
-  ];
-  const BOAT = ['  ___|___', '  \\_o_o_/'];
-  const CORAL = [' \\|/ \\|/', '  \\Y/ \\|', '   \\| /', '    |/', '   _|_'];
-  const FISH = { r: ['><>', '><((°>'], l: ['<><', '<°))><'] };
-  const ROCK = '#%@%#:%#@:.';
-  dive.querySelector('.badge').textContent = KRILL_L.join('\n');
-
-  const art = (lines, x, y, color, size = 16, lh = size * .9) => {
-    ctx.font = `${size}px ${FONT}`; ctx.fillStyle = color;
-    lines.forEach((line, i) => ctx.fillText(line, x, y + i * lh));
+  const FLIP = { '(': ')', ')': '(', '/': '\\', '\\': '/', '<': '>', '>': '<', '`': "'", "'": '`' };
+  const mirror = lines => { const n = Math.max(...lines.map(l => l.length)); return lines.map(l => [...l.padEnd(n)].reverse().map(c => FLIP[c] || c).join('')); };
+  const KRILL_R = mirror(KRILL);
+  const PINK = ['#ffd6e2', '#ffa3c0', '#ff5d8f', '#c23a66', '#7d1d3c'];
+  const GOLD = ['#fff4c2', '#ffe08a', '#ffd166', '#d9a032', '#a06c18'];
+  const FISH = { r: [['><>'], ['  ,/', "><((((°>", "  `\\"]], l: [['<><'], ['  \\.', "<°))))><", "  /'"]] };
+  const shadeRow = (pal, i, n) => pal[Math.min(pal.length - 1, Math.round(i / Math.max(1, n - 1) * (pal.length - 1)))];
+  const sprite = (lines, x, y, pal, size = 11) => {
+    ctx.font = `600 ${size}px ${SPRITE}`;
+    lines.forEach((line, i) => { ctx.fillStyle = shadeRow(pal, i, lines.length); ctx.fillText(line, x, y + i * size * 1.05); });
   };
+  // Gold badge for the result: the same krill, shaded the same way.
+  dive.querySelector('.badge').innerHTML = KRILL.map((line, i) => `<span style="color:${shadeRow(GOLD, i, KRILL.length)}">${line.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>`).join('\n');
+
+  // ---------- Shaded rock ----------
+  // Same idea as the desktop scenery: each cell gets a light value, drawn as a glyph from a density ramp in one of
+  // five tones over a dark cell fill. The rock never moves, so it is rendered once per layout into its own canvas.
+  const RAMP = ' .,:;=+*%#@'; // no letters: at this size they read as words
+  const ROCK_TONES = [
+    { fg: ['#10233d', '#1a3456', '#284a70', '#3a6189', '#5582aa'], bg: '#0a182c' }, // shallow
+    { fg: ['#10213b', '#182e4c', '#223c60', '#2f4f78', '#406594'], bg: '#081428' }, // deep
+  ];
+  let CW = 4.8, CH = 8;
+  const rockLayer = document.createElement('canvas');
+  let rockTop = 0, rockHeight = 0;
+
+  // Test hook: #cam=600 freezes the camera at that scroll position.
+  const frozen = /^#cam=(\d+)/.exec(location.hash);
 
   // ---------- Scene layout (rebuilt on resize) ----------
   let w = 0, h = 0, camEnd = 0, chipY = 0, dpr = 1;
-  let clouds = [], kelp = [], coral = [], fish = [], snow = [], walls = [];
+  let clouds = [], kelp = [], coral = [], fish = [], snow = [], noise = [];
+  // Rock: canyon walls reaching in from each side, plus a ledge near 400 m whose top rounds down toward its tip.
+  const hash = (x, y) => { const v = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return v - Math.floor(v); };
+  const vnoise = (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+  const LEDGE = [{ top: 380, len: .42 }, { top: 392, len: .36 }];
+  // Is there rock at distance x (css px) in from this side, at depth m?
+  const rock = (side, x, m) => {
+    const L = LEDGE[side], len = L.len * w, u = x / len;
+    const wallTop = L.top - 6, reach = w * (.1 + .05 * smooth(650, 1200, m)) + (vnoise(m / 22, side * 9) - .5) * 26;
+    if (m > wallTop && x < reach * Math.sqrt(smooth(wallTop, wallTop + 40, m))) return true;
+    if (u > 1) return false;
+    const top = L.top + 26 * u * u + (vnoise(x / 26, side * 5) - .5) * 8;
+    return m > top && m < top + 18 + 60 * (1 - Math.pow(u, 1.4));
+  };
+  const ledgeTop = (side, x) => { for (let m = 360; m < 560; m += 1) if (rock(side, side ? w - x : x, m)) return depthY(m); return depthY(560); };
   const layout = () => {
     w = dive.clientWidth; h = dive.clientHeight; dpr = Math.min(2, devicePixelRatio || 1);
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    ctx.font = FONT; CW = ctx.measureText('M').width || 4.8; CH = 8;
     chipY = h * .44;
-    camEnd = depthY(1000) - chipY;
-    clouds = CLOUDS.map((lines, i) => ({ lines, x: [.04, .5, .26][i] * w, y: [30, 62, 98][i], speed: rand(1.5, 3) }));
-    kelp = Array.from({ length: 14 }, (_, i) => {
-      const left = i % 2 === 0, back = i % 3 === 0;
-      return { x: left ? rand(-6, w * .2) : rand(w * .74, w - 20), base: depthY(385) + rand(-30, 30), rows: rand(14, 34) | 0, back, phase: rand(0, 6) };
-    }).sort((a, b) => b.back - a.back);
-    coral = [[w * .04, depthY(395), false], [w * .66, depthY(390), false], [w * .62, depthY(1175), true], [w * .1, depthY(1190), true]];
-    fish = Array.from({ length: 9 }, (_, i) => ({ x: rand(0, w), y: i < 6 ? depthY(rand(25, 330)) : depthY(rand(650, 1150)), v: rand(12, 34) * (i % 2 ? 1 : -1), big: Math.random() < .35, deep: i >= 6 }));
+    camEnd = frozen ? +frozen[1] : depthY(1000) - chipY;
+    noise = [0, 1].map(() => { let v = 0; return Array.from({ length: 400 }, () => (v = Math.max(-1, Math.min(1, v + rand(-.35, .35))))); });
+    clouds = [[.02, 52, 1.25], [.5, 92, 1], [.28, 128, .8]].map(([fx, y, s]) => ({
+      x: fx * w, y, speed: rand(2, 5), puffs: [[0, 9, 13], [14, 2, 16], [30, -4, 19], [47, 3, 15], [61, 9, 11], [26, 10, 15]].map(([dx, dy, r]) => [dx * s * 1.2, dy * s, r * s * 1.1]),
+    }));
+    kelp = Array.from({ length: 16 }, (_, i) => {
+      const side = i % 2, x = side ? rand(w * .7, w - 10) : rand(8, w * .34), far = i % 3 === 0;
+      return { side, x, base: ledgeTop(side, x) + 8, len: rand(far ? 150 : 110, far ? 260 : 220), far, phase: rand(0, 6), segs: 26 };
+    }).sort((a, b) => b.far - a.far);
+    coral = [[w * .22, 0], [w * .84, 1], [w * .1, 0], [w * .93, 1]].map(([x, side], i) => ({ x, base: ledgeTop(side, x) + 6, size: i > 1 ? 22 : 30, seed: rand(0, 9) }));
+    fish = Array.from({ length: 9 }, (_, i) => ({ x: rand(0, w), y: i < 6 ? depthY(rand(25, 330)) : depthY(rand(560, 1150)), v: rand(12, 34) * (i % 2 ? 1 : -1), big: Math.random() < .4, deep: i >= 6 }));
     snow = Array.from({ length: 70 }, () => ({ x: rand(0, w), y: rand(SURF, depthY(1300)), v: rand(2, 6) }));
-    // Rock walls below 600m: a row of ASCII every 12px, width wandering slowly.
-    let a = 4, b = 4;
-    walls = Array.from({ length: Math.ceil((depthY(1400) - depthY(600)) / 12) }, () => {
-      a = Math.max(1, Math.min(8, a + rand(-.8, .8))); b = Math.max(1, Math.min(8, b + rand(-.8, .8)));
-      const row = n => Array.from({ length: Math.round(n) }, (_, k) => ROCK[(k * 3 + (Math.random() * 3 | 0)) % ROCK.length]).join('');
-      return [row(a), row(b)];
-    });
+    buildRock();
   };
 
   // ---------- Colours ----------
   const STOPS = [[0, [38, 112, 163]], [60, [30, 96, 145]], [150, [24, 78, 124]], [300, [17, 56, 95]], [450, [12, 38, 70]], [650, [10, 27, 52]], [900, [8, 19, 38]], [1300, [6, 12, 25]]];
   const water = m => {
     let i = 1; while (i < STOPS.length - 1 && m > STOPS[i][0]) i++;
-    const [m0, c0] = STOPS[i - 1], [m1, c1] = STOPS[i], f = Math.max(0, Math.min(1, (m - m0) / (m1 - m0)));
+    const [m0, c0] = STOPS[i - 1], [m1, c1] = STOPS[i], f = clamp((m - m0) / (m1 - m0));
     return c0.map((c, k) => Math.round(c + (c1[k] - c) * f));
   };
   const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
 
   // ---------- Bubbles ----------
   let bubbles = [];
-  const addBubble = (x, y, fast) => bubbles.push({ x, y, c: pick(['o', 'o', '°', 'O']), v: fast ? rand(110, 210) : rand(36, 72), ph: rand(0, 6) });
+  const addBubble = (x, y, fast) => bubbles.push({ x, y, c: pick(['o', 'o', '°', 'O', '.']), v: fast ? rand(110, 210) : rand(36, 72), ph: rand(0, 6) });
 
   // ---------- State ----------
   let cam = 0, tween = null, phase = 'idle', chipShown = false, swarm = null, last = 0, t = 0;
-  const mascotIdle = () => [12, h * .68];
+  const mascotIdle = () => [10, h * .7];
   let mascot = { x: 0, y: 0, tx: 0, ty: 0 };
+
+  // Render the rock once: mark solid cells, then light each by how close it is to open water above and to the side.
+  const buildRock = () => {
+    rockTop = depthY(360); rockHeight = depthY(1420) - rockTop;
+    rockLayer.width = Math.round(w * dpr); rockLayer.height = Math.round(rockHeight * dpr);
+    const g = rockLayer.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.textBaseline = 'top'; g.font = FONT;
+    const cols = Math.ceil(w / CW) + 1, rows = Math.ceil(rockHeight / CH);
+    const solid = new Uint8Array(cols * rows);
+    for (let j = 0; j < rows; j++) {
+      const m = (rockTop + (j + .5) * CH - SURF) / MPX;
+      for (let i = 0; i < cols; i++) {
+        const x = (i + .5) * CW;
+        if (rock(0, x, m) || rock(1, w - x, m)) solid[j * cols + i] = 1;
+      }
+    }
+    const groups = new Map();
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+      const k = j * cols + i;
+      if (!solid[k]) continue;
+      let up = 0; while (up < 4 && j - up - 1 >= 0 && solid[k - (up + 1) * cols]) up++;
+      let side = 0; while (side < 5 && i - side - 1 >= 0 && i + side + 1 < cols && solid[k - side - 1] && solid[k + side + 1]) side++;
+      const y = rockTop + j * CH, m = (y + CH / 2 - SURF) / MPX;
+      const boulder = vnoise(i * CW / 16, y / 12), crack = Math.abs(vnoise(i * CW / 40 + 3, y / 30) - .5) < .04;
+      let v = Math.max([.92, .74, .56, .42, .3][up], .62 - side * .1) * (.55 + boulder * .6);
+      if (crack) v *= .45;
+      v = clamp(v * (1 - smooth(420, 1250, m) * .25));
+      const tone = ROCK_TONES[m < 620 ? 0 : 1];
+      g.fillStyle = tone.bg; g.fillRect(i * CW, j * CH, CW + .6, CH + .6);
+      const key = (m < 620 ? 0 : 8) + Math.round(v * 4);
+      let list = groups.get(key); if (!list) groups.set(key, list = []);
+      list.push([i * CW, j * CH, RAMP[1 + Math.round(v * (RAMP.length - 2))]]);
+    }
+    for (const [key, list] of groups) {
+      g.fillStyle = ROCK_TONES[key >> 3].fg[key & 7];
+      for (const [x, y, c] of list) g.fillText(c, x, y);
+    }
+  };
+
+  // Kelp and coral are drawn as line glyphs that follow their shape, so they sway smoothly instead of snapping to cells.
+  const slant = (dx, dy) => { const a = Math.atan2(dx, -dy); return a > .32 ? '/' : a < -.32 ? '\\' : '|'; };
+  // Tones per kelp layer: shadow, body, lit edge, highlight.
+  const KELP_PAL = { far: ['#123b5e', '#1b4d74', '#26618a', '#35779f'], near: ['#061c30', '#0f3150', '#1c4a6e', '#2d6589'] };
+  const drawKelp = k => {
+    if (k.base - k.len > cam + h || k.base < cam - 40) return;
+    const pal = KELP_PAL[k.far ? 'far' : 'near'], size = k.far ? 11 : 13, step = k.len / k.segs, cw = size * .6;
+    ctx.font = `600 ${size}px ${SPRITE}`;
+    let x = k.x, y = k.base;
+    for (let s = 0; s < k.segs; s++) {
+      const f = s / k.segs, thick = f < .75;
+      const ang = Math.sin(t * 1.1 + k.phase + f * 2.2) * .17 * (.25 + f) + Math.sin(t * .5 + k.phase) * .05;
+      const nx = x + Math.sin(ang) * step, ny = y - Math.cos(ang) * step, sy = ny - cam;
+      const g = slant(nx - x, ny - y);
+      // Stalk as a tube: lit left rim, body, shaded right rim.
+      if (thick) { ctx.fillStyle = pal[2]; ctx.fillText('(', nx - cw * 1.4, sy); }
+      ctx.fillStyle = pal[thick ? 1 : 2]; ctx.fillText(g, nx - cw * .5, sy);
+      if (thick) { ctx.fillStyle = pal[0]; ctx.fillText(')', nx + cw * .4, sy); }
+      // Blades every few segments, alternating sides: a lit upper edge over a shaded underside, curling up and out.
+      if (s % 3 === 1 && s < k.segs - 2) {
+        const dir = (s / 3 | 0) % 2 ? 1 : -1, n = Math.round((k.far ? 4 : 5) * (1 - f * .4));
+        for (let b = 1; b <= n; b++) {
+          const bx = nx + dir * (b * cw + cw * .3) + Math.sin(ang) * b * 3, by = sy - b * size * .3 + (b * b) * .25;
+          const edge = b === n ? (dir > 0 ? "'" : '`') : dir > 0 ? '/' : '\\';
+          ctx.fillStyle = pal[0]; ctx.fillText(b === n ? '.' : '~', bx, by + size * .35);
+          ctx.fillStyle = pal[dir < 0 ? 3 : 2]; ctx.fillText(edge, bx, by);
+        }
+      }
+      x = nx; y = ny;
+    }
+    ctx.fillStyle = pal[3]; ctx.fillText('*', x - cw * .5, y - cam - size * .5);
+  };
+  const drawCoral = c => {
+    if (c.base < cam - 60 || c.base - 80 > cam + h) return;
+    ctx.font = `600 11px ${SPRITE}`;
+    const branch = (x, y, ang, len, d) => {
+      const sway = Math.sin(t * .8 + c.seed + d) * .05, dx = Math.cos(ang + sway), dy = -Math.sin(ang + sway);
+      ctx.fillStyle = ['#7c2f5c', '#a33d70', '#cc5585', '#ef7fa4'][3 - d];
+      for (let s = 0; s < len; s += 7) ctx.fillText(slant(dx, dy), x + dx * s - 3, y + dy * s - cam - 6);
+      const ex = x + dx * len, ey = y + dy * len;
+      if (d > 0) {
+        ctx.fillStyle = '#cc5585'; ctx.fillText('Y', ex - 3, ey - cam - 6);
+        for (const turn of [-.6, .55]) branch(ex, ey, ang + turn + Math.sin(c.seed * (d + 1)) * .2, len * .68, d - 1);
+      } else { ctx.fillStyle = '#ffb3cb'; ctx.fillText('o', ex - 3, ey - cam - 7); }
+    };
+    branch(c.x, c.base, Math.PI / 2, c.size * .6, 3);
+  };
+
+  // Sky: clouds and sun sampled on a fine local grid so their soft edges and shading survive.
+  const SKY_RAMP = ' .:-=+*#%@';
+  const CLOUD_TONES = ['#a9c7de', '#c3d9ea', '#dcebf5', '#f1f8fc', '#ffffff'];
+  const SUN_TONES = ['#f2b233', '#f9c94a', '#ffdb6a', '#ffe99a', '#fff7d6'];
+  const drawSky = () => {
+    if (cam > SURF + 40) return;
+    const fx = 4, fy = 5;
+    ctx.font = `600 7px ${SPRITE}`;
+    // Sun: bright core fading to a dotted rim, with slowly turning rays.
+    const sx = w * .64, sy = 74 - cam, R = 24;
+    for (let y = -R; y <= R; y += fy) for (let x = -R; x <= R; x += fx) {
+      const d = Math.hypot(x, y) / R;
+      if (d > 1) continue;
+      const v = clamp(1 - d * .75 + (x * -.004 + y * -.006));
+      ctx.fillStyle = SUN_TONES[Math.round(v * 4)];
+      ctx.fillText(SKY_RAMP[Math.max(2, Math.round(v * (SKY_RAMP.length - 1)))], sx + x, sy + y);
+    }
+    ctx.font = `600 10px ${SPRITE}`; ctx.fillStyle = '#ffd451';
+    for (let a = 0; a < 8; a++) {
+      const ang = a * Math.PI / 4 + t * .15, r = R + 9 + Math.sin(t * 2 + a) * 2;
+      ctx.fillText('|/-\\|/-\\'[((Math.round((ang % Math.PI) / (Math.PI / 4)) % 4) + 4) % 4 + (a > 3 ? 0 : 0)], sx + Math.sin(ang) * r - 3, sy - Math.cos(ang) * r - 5);
+    }
+    // Clouds: a density field from overlapping puffs, lit from above, thinning to dots at the edges.
+    ctx.font = `600 7px ${SPRITE}`;
+    for (const c of clouds) {
+      const ox = ((c.x + t * c.speed) % (w + 160)) - 80, oy = c.y - cam;
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const [dx, dy, r] of c.puffs) { x0 = Math.min(x0, dx - r); x1 = Math.max(x1, dx + r); y0 = Math.min(y0, dy - r); y1 = Math.max(y1, dy + r * .4); }
+      ctx.fillStyle = 'rgba(255,255,255,.16)';
+      for (const [dx, dy, r] of c.puffs) { ctx.beginPath(); ctx.ellipse(ox + dx, oy + dy, r * .85, r * .65, 0, 0, 7); ctx.fill(); }
+      for (let y = Math.floor(y0 / fy) * fy; y <= y1; y += fy) for (let x = Math.floor(x0 / fx) * fx; x <= x1; x += fx) {
+        let field = 0;
+        for (const [dx, dy, r] of c.puffs) { const q = ((x - dx) ** 2 + ((y - dy) * 1.25) ** 2) / (r * r); if (q < 1) field += (1 - q) ** 2; }
+        if (field < .08) continue;
+        const height = clamp((y - y0) / (y1 - y0)), v = clamp(Math.min(1, field * 1.6) * (1.05 - height * .7));
+        ctx.fillStyle = CLOUD_TONES[Math.round(v * 4)];
+        ctx.fillText(SKY_RAMP[Math.max(1, Math.round(v * (SKY_RAMP.length - 1)))], ox + x, oy + y);
+      }
+    }
+    // Boat, shaded top to bottom, with a pink pennant.
+    const bx = w * .14, by = SURF - 38 + Math.sin(t * 2) * 1.5 - cam;
+    sprite(['         |', '     ____|____', "  __|_[]_[]_[]|__", '  \\ = = = = = = /', "   `~~~~~~~~~~~'"], bx, by, ['#2a4268', '#1c3052', '#132440', '#0b1830', '#2c6d9c'], 9);
+    ctx.font = `600 9px ${SPRITE}`; ctx.fillStyle = '#ff5d8f'; ctx.fillText('>', bx + 9 * .6 * 10, by - 1);
+  };
 
   const draw = now => {
     const dt = Math.min(.05, (now - last) / 1000 || 0); last = now; t += dt;
@@ -106,28 +265,9 @@
       const wy = y + cam;
       if (wy < SURF) {
         const f = Math.floor(wy / SURF * 10) / 10;
-        ctx.fillStyle = rgb([74 + 70 * f, 160 + 50 * f, 222 + 22 * f].map(Math.round));
+        ctx.fillStyle = rgb([58 + 52 * f, 142 + 44 * f, 210 + 22 * f].map(Math.round));
       } else ctx.fillStyle = rgb(water(Math.floor((wy - SURF) / MPX / 25) * 25 + 12));
       ctx.fillRect(0, y, w, 6);
-    }
-    // Surface: sun, clouds, boat and waves.
-    if (surf > 0) {
-      const sx = w * .64, sy = 74 - cam;
-      ctx.fillStyle = 'rgba(255,229,138,.22)'; ctx.beginPath(); ctx.arc(sx, sy, 40, 0, 7); ctx.fill();
-      art(SUN, sx - 20, sy - 22, '#ffd84a', 18, 15);
-      for (const c of clouds) {
-        const cx = ((c.x + t * c.speed) % (w + 140)) - 70;
-        art(c.lines.slice(0, -1), cx, c.y - cam, '#fff', 17, 14);
-        art(c.lines.slice(-1), cx, c.y - cam + (c.lines.length - 1) * 14, '#cfe6f6', 17, 14);
-      }
-      const bx = w * .2, by = surf - 34 + Math.sin(t * 2) * 1.2;
-      art(['     |'], bx, by - 14, '#0d1830', 17, 14);
-      art(['      >'], bx, by - 15, '#ff5d8f', 17, 14);
-      art(BOAT, bx, by, '#0d1830', 17, 14);
-      ctx.font = `16px ${FONT}`; ctx.fillStyle = '#5aa5d6';
-      const wave = ".-'``'-.", cw = 7, shift = (t * 14) % (wave.length * cw);
-      let row = ''; for (let i = 0; i < w / cw + wave.length * 2; i++) row += wave[i % wave.length];
-      ctx.fillText(row, -shift, surf - 9);
     }
     // Light rays.
     for (const [fx, wd] of [[.12, 20], [.32, 32], [.52, 18], [.7, 30], [.9, 20]]) {
@@ -135,36 +275,35 @@
       const g = ctx.createLinearGradient(0, surf, 0, surf + len); g.addColorStop(0, 'rgba(200,235,255,.08)'); g.addColorStop(1, 'rgba(200,235,255,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x0, surf); ctx.lineTo(x0 + wd, surf); ctx.lineTo(x0 + wd + 100, surf + len); ctx.lineTo(x0 + 100, surf + len); ctx.fill();
     }
-    // Rock walls.
-    ctx.font = `15px ${FONT}`; ctx.fillStyle = '#1c3658';
-    const wallTop = depthY(600);
-    for (let i = Math.max(0, Math.floor((cam - wallTop) / 12)); i < walls.length; i++) {
-      const y = wallTop + i * 12 - cam;
-      if (y > h) break;
-      ctx.textAlign = 'left'; ctx.fillText(walls[i][0], 0, y);
-      ctx.textAlign = 'right'; ctx.fillText(walls[i][1], w, y);
-    }
-    ctx.textAlign = 'left';
-    // Kelp: "(|" and "|)" stacked, swaying more toward the tip.
-    for (const k of kelp) {
-      const size = k.back ? 15 : 20, lh = size * .7, by = k.base - cam;
-      if (by - k.rows * lh > h || by < -20) continue;
-      ctx.font = `${size}px ${FONT}`; ctx.fillStyle = k.back ? '#0d3256' : '#06192e';
-      for (let i = 0; i < k.rows; i++) {
-        const f = i / k.rows, x = k.x + Math.sin(t * .9 + k.phase + i * .18) * f * f * 14;
-        ctx.fillText(i === k.rows - 1 ? ' )' : i % 2 ? '(|' : ' |)', x, by - i * lh);
+    if (surf > 0) { ctx.fillStyle = 'rgba(255,229,138,.22)'; ctx.beginPath(); ctx.arc(w * .64, 74 - cam, 40, 0, 7); ctx.fill(); }
+    drawSky();
+
+    // Far kelp behind the rock, then the pre-rendered rock.
+    kelp.forEach(k => k.far && drawKelp(k));
+    if (rockTop - cam < h && rockTop + rockHeight - cam > 0) ctx.drawImage(rockLayer, 0, rockTop - cam, w, rockHeight);
+
+    coral.forEach(drawCoral);
+    kelp.forEach(k => k.far || drawKelp(k));
+    // Waves and the boat's flag.
+    if (surf > -20) {
+      ctx.font = `600 13px ${SPRITE}`;
+      const shift = (t * 16) % 24;
+      for (let x = -24; x < w + 24; x += 8) {
+        const hgt = Math.sin((x + shift * 2) * .05 + t) * 2.5;
+        ctx.fillStyle = hgt > 1 ? '#d8eefa' : hgt > -1 ? '#7fc0e6' : '#3d8fc4';
+        ctx.fillText(hgt > 1 ? '^' : '~', x - shift, surf - 9 + hgt);
       }
     }
-    for (const [x, y, deep] of coral) art(CORAL, x, y - cam - CORAL.length * 14, deep ? '#1c3658' : '#081f38', 17, 14);
-    // Fish.
+    // Fish, shaded top to bottom.
     for (const f of fish) {
-      f.x += f.v * dt; if (f.x > w + 40) f.x = -40; if (f.x < -40) f.x = w + 40;
+      f.x += f.v * dt; if (f.x > w + 50) f.x = -50; if (f.x < -50) f.x = w + 50;
       const y = f.y - cam;
-      if (y < -20 || y > h + 20) continue;
-      art([FISH[f.v > 0 ? 'r' : 'l'][f.big ? 1 : 0]], f.x, y, f.deep ? '#2a4466' : '#08213b', 15);
+      if (y < -30 || y > h + 30) continue;
+      const pal = f.deep ? ['#3a5578', '#2a4466', '#1c3352'] : ['#2d6390', '#16446c', '#0a2a48'];
+      sprite(FISH[f.v > 0 ? 'r' : 'l'][f.big ? 1 : 0], f.x, y, pal, f.big ? 10 : 12);
     }
     // Marine snow.
-    ctx.font = `12px ${FONT}`; ctx.fillStyle = 'rgba(170,200,230,.4)';
+    ctx.font = `10px ${SPRITE}`; ctx.fillStyle = 'rgba(170,200,230,.4)';
     for (const s of snow) { s.y += s.v * dt; const y = s.y - cam; if (y >= 0 && y < h) ctx.fillText('.', s.x + Math.sin(t + s.y) * 2, y); }
     // Ruler.
     const rx = w - 9;
@@ -176,7 +315,7 @@
     }
     // Bubbles.
     if (Math.random() < dt * 2.2) addBubble(rand(0, w), cam + h + 10, false);
-    ctx.font = `15px ${FONT}`; ctx.fillStyle = 'rgba(190,220,245,.6)';
+    ctx.font = `600 12px ${SPRITE}`; ctx.fillStyle = 'rgba(200,228,248,.65)';
     bubbles = bubbles.filter(b => {
       b.y -= b.v * dt; const y = b.y - cam;
       if (y < surf || y < -16) return false;
@@ -186,13 +325,14 @@
     mascot.x += (mascot.tx - mascot.x) * Math.min(1, dt * 6); mascot.y += (mascot.ty - mascot.y) * Math.min(1, dt * 6);
     if (phase === 'card' || phase === 'chip') {
       if (swarm) {
-        ctx.font = `13px ${FONT}`; ctx.fillStyle = '#ff5d8f';
+        ctx.font = `600 10px ${SPRITE}`;
         for (const s of swarm) {
-          const a = s.a + t * s.v;
-          ctx.fillText(Math.cos(a) * s.v > 0 ? '>' : '<', w / 2 + Math.cos(a) * s.rx, chipY + Math.sin(a) * s.ry - 6);
+          const a = s.a + t * s.v, right = -Math.sin(a) * s.v > 0;
+          ctx.fillStyle = s.c;
+          ctx.fillText(right ? '~)>' : '<(~', w / 2 + Math.cos(a) * s.rx - 8, chipY + Math.sin(a) * s.ry - 6);
         }
       }
-      art(swarm ? KRILL_R : KRILL_L, mascot.x, mascot.y + Math.sin(t * 2.4) * 4, '#ff5d8f', 16, 13);
+      sprite(swarm ? KRILL_R : KRILL, mascot.x, mascot.y + Math.sin(t * 2.4) * 4, PINK, 10);
     }
     // Lines light up as the answer sinks past them.
     if (chipShown) for (const el of tiers) el.classList.toggle('lit', el._y - cam < chipY + 4);
@@ -247,8 +387,8 @@
     // The answer lands in the water with its swarm; the lines appear.
     at(s += 650, () => {
       dive.classList.add('zap', 'chip-in'); chipShown = true; phase = 'chip';
-      swarm = Array.from({ length: 14 }, () => ({ a: rand(0, 7), v: rand(1.5, 3) * (Math.random() < .5 ? -1 : 1), rx: rand(50, 100), ry: rand(16, 36) }));
-      mascot.tx = w / 2 + 92; mascot.ty = chipY - 46;
+      swarm = Array.from({ length: 14 }, () => ({ a: rand(0, 7), v: rand(1.5, 3) * (Math.random() < .5 ? -1 : 1), rx: rand(50, 100), ry: rand(16, 36), c: pick(['#ff5d8f', '#ff86ab', '#c23a66']) }));
+      mascot.tx = w / 2 + 84; mascot.ty = chipY - 52;
     });
     at(s += 550, () => dive.classList.add('gone'));
     // Descent: the world scrolls up past the answer, which rocks in place.
@@ -271,7 +411,7 @@
 
   // ---------- Wiring ----------
   layout();
-  if (document.fonts) document.fonts.load(`16px ${FONT}`).then(() => { if (reduced) draw(performance.now()); });
+  if (document.fonts) document.fonts.load(FONT).then(() => { layout(); if (phase === 'done') cam = camEnd; if (reduced) draw(performance.now()); });
   [mascot.x, mascot.y] = mascotIdle();
   addEventListener('resize', () => { const k = cam === camEnd; layout(); if (k || phase === 'done') cam = camEnd; if (reduced) { running = false; draw(performance.now()); } });
   const menuBtn = dive.querySelector('.menu-btn'), menu = dive.querySelector('.menu');
@@ -286,5 +426,6 @@
   const small = matchMedia('(max-width: 899px), (max-height: 639px), (max-aspect-ratio: 5/4)').matches;
   let seen = false;
   try { seen = sessionStorage.getItem('dove') === '1'; sessionStorage.setItem('dove', '1'); } catch {}
+  if (frozen) { cam = camEnd; return; }
   if (small && !seen) play();
 })();

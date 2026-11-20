@@ -111,7 +111,7 @@
   /* Result */
   .landed { position: absolute; z-index: 3; top: calc(44% - 112px); left: 0; right: 0; margin: 0 auto; width: min(100% - 32px, 420px); text-align: center; }
   .landed::before { content: ""; position: absolute; z-index: -1; left: 50%; top: -34px; width: 130px; height: 130px; margin-left: -65px; background: radial-gradient(closest-side, rgba(255,209,102,.45), transparent); animation: m-breathe 2.6s var(--m-smooth) infinite; }
-  .badge { display: inline-block; margin-bottom: 10px; white-space: pre; text-align: left; font-size: 20px; line-height: .9; color: var(--m-gold); text-shadow: 0 0 10px rgba(255,209,102,.8); animation: m-bob 2.6s ease-in-out infinite; }
+  .badge { display: inline-block; margin-bottom: 12px; white-space: pre; text-align: left; font: 600 13px/1.05 "IBM Plex Mono", ui-monospace, monospace; text-shadow: 0 0 10px rgba(255,209,102,.55); animation: m-bob 2.6s ease-in-out infinite; }
   .title { font-size: 33px; letter-spacing: 3px; color: var(--m-gold); text-shadow: 0 0 22px rgba(255,209,102,.8), 0 3px 0 #000; }
   .who { font-size: 19px; margin: 6px 0 10px !important; }
   .pts { font-size: 22px; }
