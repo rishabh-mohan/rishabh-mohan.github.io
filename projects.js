@@ -60,7 +60,7 @@ const projects = [
       ['Mother of Learning', 'Domagoj Kurmaić', 'https://www.goodreads.com/book/show/59661342', 'books/mother-of-learning.webp'],
       ['Atomic Habits', 'James Clear', 'https://www.goodreads.com/book/show/40121378', 'books/atomic-habits.webp'],
       ['Dungeon Crawler Carl: A Parade of Horribles', 'Matt Dinniman', 'https://www.goodreads.com/book/show/228928465', 'books/parade-of-horribles.webp'],
-      ['Incendiaries: Advanced Improvised Explosives', 'Seymour Lecker', 'https://www.goodreads.com/book/show/2470797', 'books/incendiaries.webp']
+      ['The Construction of Secret Hiding Places', 'Charles Robinson', 'https://www.goodreads.com/book/show/19440306', 'books/secret-hiding-places.webp']
     ],
     links: [['GitHub', 'https://github.com/rishabh-mohan/rr-scraper']]
   },
