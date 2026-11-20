@@ -36,26 +36,19 @@ const posts = [];
   // Resume, from the Resume window's sections: 0 Skills, 1 Experience, 2 Academics, 3 Projects, 4 Tutoring.
   const resume = projects.find(project => project.name === 'Resume').detail;
   const block = (title, ...kids) => el('div', { className: 'block' }, el('h3', { textContent: title }), ...kids);
-  // "Role at Org (Dates): what I did" -> a timeline entry.
-  const job = text => {
-    const [, role, org, dates, body] = /^(.+?) at (.+?) \((.+?)\): (.+)$/.exec(text) || [, text, '', '', ''];
-    return el('li', { className: 'job' },
-      el('p', { className: 'when', textContent: dates }),
-      el('p', { className: 'role', textContent: role }),
-      el('p', { className: 'org', textContent: org }),
-      el('p', { className: 'body', textContent: body }));
-  };
-  // "Languages: a, b. Frameworks: c, d." -> labelled tag groups.
-  const skills = resume[0].replace(/\.$/, '').split('. ').map(group => {
-    const [label, items] = group.split(': ');
-    return el('div', { className: 'skill-group' }, el('p', { className: 'label', textContent: label }),
-      el('ul', { className: 'tags' }, ...items.split(', ').map(item => el('li', { textContent: item }))));
-  });
-  // Two schools, split after the graduation year.
-  const schools = resume[2].replace(/\.$/, '').split(/(?<=\d{4})\. /).map(line => {
-    const [title, ...rest] = line.split(', ');
-    return el('li', {}, el('p', { className: 'role', textContent: title }), el('p', { className: 'org', textContent: rest.join(' · ') }));
-  });
+  const job = entry => el('li', { className: 'job' },
+    el('p', { className: 'when', textContent: entry.dates }),
+    el('h4', { className: 'role', textContent: entry.role }),
+    el('p', { className: 'org', textContent: entry.org }),
+    el('ul', { className: 'experience-points body' }, ...entry.bullets.map(text => el('li', { textContent: text }))));
+  const skills = mobileBackground.skills.map(group => el('div', { className: 'skill-group' },
+    el('h4', { className: 'role', textContent: group.name }),
+    el('p', { className: 'body', textContent: group.description }),
+    el('ul', { className: 'tags' }, ...group.tools.map(text => el('li', { textContent: text })))));
+  const schools = mobileBackground.education.map(entry => el('li', {},
+    el('h4', { className: 'role', textContent: entry.school }),
+    el('p', { className: 'org', textContent: entry.qualification }),
+    el('p', { className: 'body', textContent: entry.note })));
   // "Name (what it is), ..." -> a list with the description dimmed.
   const builds = resume[3].replace(/\.$/, '').split(/, (?:and )?/)
     .filter(item => !/^(?:d31|rr-scraper) \(/.test(item)).map(item => {
@@ -68,20 +61,21 @@ const posts = [];
     ...(project.links.length ? [links(project.links)] : [])
   )));
   root.querySelector('.resume').append(
-    block('Experience', el('ol', { className: 'timeline' }, job(resume[1]), job(resume[4]))),
-    block('Skills', ...skills),
+    block('A little background', el('p', { className: 'body', textContent: mobileBackground.intro })),
+    block('Experience', el('ol', { className: 'timeline' }, ...mobileBackground.experience.map(job))),
+    block('What I work with', ...skills),
     block('Education', el('ul', { className: 'plain' }, ...schools)),
     block('Also built', el('ul', { className: 'plain' }, ...builds)),
   );
 
-  // Blog: posts open in place. With none yet, show a Krillion-style miss card.
+  // Blog: posts open in place; the empty state points visitors to existing work.
   root.querySelector('.posts').append(...(posts.length ? posts.map(post => el('details', { className: 'post' },
     el('summary', {}, el('time', { dateTime: post.date, textContent: post.date }), el('span', { textContent: post.title })),
     ...post.body.map(text => el('p', { className: 'body', textContent: text })))) : [
     el('div', { className: 'empty' },
-      el('p', { className: 'miss', textContent: 'NOTHING LANDED' }),
-      el('p', { className: 'dash', textContent: '—' }),
-      el('p', { className: 'body', textContent: 'No posts yet. The first one is still sinking.' })),
+      el('h3', { className: 'empty-title', textContent: 'No posts published yet' }),
+      el('p', { className: 'body', textContent: 'For now, the project repositories have setup guides and more detail about how the tools work.' }),
+      links([['Explore GitHub', 'https://github.com/rishabh-mohan']])),
   ]));
 
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;

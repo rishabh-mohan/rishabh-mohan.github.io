@@ -50,3 +50,34 @@ const mobileAdditionalProjects = [
     links: [['GitHub', 'https://github.com/rishabh-mohan/gemini-api']]
   }
 ];
+
+// Background facts from the resume and applicant profile; no inferred proficiency ratings.
+const mobileBackground = {
+  intro: 'I’m Rishabh, a computer science student at Purdue. I build tools for everyday tasks, from keeping up with coursework to reading offline. My experience also includes testing payment software and helping students learn math.',
+  experience: [
+    {
+      role: 'Technical Systems Analyst Intern', org: 'Ayris Global', dates: 'May 2024 – July 2026',
+      bullets: [
+        'Tested payment acceptance workflows in Assure PAT, documenting reproducible edge cases and defects for the team.',
+        'Checked functionality and visual behavior to help identify problems before certification reviews.',
+        'Drafted a provisional patent document describing payment-testing workflows and helped present the platform to Discover’s certification teams.'
+      ]
+    },
+    {
+      role: 'Lead Math Tutor', org: 'Eye Level Learning Center', dates: 'Nov 2024 – Aug 2026',
+      bullets: [
+        'Tutored 200+ students, from pre-K fundamentals through trigonometry, adapting explanations to different ages and levels.',
+        'Redesigned a grading workflow that most tutors adopted, making it easier for the team to review student work.'
+      ]
+    }
+  ],
+  skills: [
+    { name: 'Web tools & automation', description: 'Browser interfaces, everyday workflows and offline exports.', tools: ['JavaScript', 'HTML/CSS', 'Node.js', 'Playwright', 'Cheerio'] },
+    { name: 'Apps & interactive systems', description: 'Games, content editors and pathfinding.', tools: ['Java', 'Dart', 'Flutter', 'JSON'] },
+    { name: 'Testing & collaboration', description: 'Reproducing issues, checking behavior and communicating changes.', tools: ['Functional QA', 'Visual QA', 'Git', 'Python'] }
+  ],
+  education: [
+    { school: 'Purdue University', qualification: 'B.S. in Computer Science', note: 'Expected May 2029 · accelerated degree plan' },
+    { school: 'Adlai E. Stevenson High School', qualification: 'Highest Honors', note: '4.25 weighted GPA' }
+  ]
+};

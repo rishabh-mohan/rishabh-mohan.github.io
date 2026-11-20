@@ -192,6 +192,14 @@
   .links { display: flex; flex-wrap: wrap; gap: 16px; margin: 0; padding: 4px 4px 6px; }
 
   /* Resume. */
+  #mobile .section-intro { margin: 8px 0 4px; font: 14px/1.6 "IBM Plex Mono", ui-monospace, monospace; color: var(--m-muted2); letter-spacing: 0; }
+  #mobile .resume .block + .block { padding-top: 22px; border-top: 1px solid #1b3050; }
+  #mobile .resume h4 { font-weight: normal; }
+  #mobile .experience-points { padding-left: 18px; }
+  #mobile .experience-points li + li { margin-top: 10px; }
+  #mobile .resume .skill-group { margin-bottom: 22px; }
+  #mobile .resume .skill-group .body { margin: 6px 0 10px; }
+  #mobile .resume .plain .org { margin-top: 5px; }
   .resume .block { margin-bottom: 26px; }
   .resume h3 { font: inherit; font-size: 24px; letter-spacing: 3px; color: var(--m-gold); margin: 0 0 12px; text-shadow: 0 0 12px rgba(255,209,102,.35); }
   .role { margin: 0; font-size: 21px; line-height: 1.15; color: var(--m-text); }
@@ -210,6 +218,9 @@
   .plain .org { color: var(--m-muted2); }
 
   /* Blog. */
+  #mobile .empty { text-align: left; padding: 20px; }
+  #mobile .empty-title { margin: 0 0 10px; font: 26px/1.15 "VT323", ui-monospace, monospace; color: var(--m-text); }
+  #mobile .empty .links { margin-top: 20px; }
   .post { padding: 12px 14px; margin-bottom: 12px; background: #0c172b; box-shadow: inset 0 0 0 2px #1b3050; }
   .post summary { cursor: pointer; font-size: 22px; color: var(--m-cyan); list-style: none; }
   .post summary time { display: block; font-size: 14px; letter-spacing: 2px; color: var(--m-muted); }
@@ -219,6 +230,15 @@
   .dash { margin: 4px 0 8px; font-size: 22px; color: var(--m-muted); }
 
   /* Trench floor. */
+  #mobile .floor { width: min(100% - 32px, 560px); margin-inline: auto; padding-inline: 0; }
+  #mobile .floor h2 { margin-bottom: 12px; }
+  #mobile .contact-intro { text-align: left; }
+  #mobile .contact-links { display: grid; margin: 22px 0 26px; text-align: left; }
+  #mobile .contact-links a { display: block; padding: 14px 0; border-bottom: 1px solid #1b3050; text-decoration: none; }
+  #mobile .contact-links a:first-child { border-top: 1px solid #1b3050; }
+  #mobile .contact-links span { display: block; font: 23px/1.2 "VT323", ui-monospace, monospace; }
+  #mobile .contact-links small { display: block; margin-top: 5px; font: 12px/1.6 "IBM Plex Mono", ui-monospace, monospace; color: var(--m-muted2); }
+  #mobile .contact-links a:hover span { color: var(--m-text); }
   .floor { text-align: center; padding: 36px 16px 44px; color: var(--m-muted); }
   .floor pre { display: inline-block; text-align: left; font: 14px/1.2 "IBM Plex Mono", ui-monospace, monospace; margin: 0 0 6px; color: #2f4a6e; }
   .floor-note { margin: 0 0 18px; font-size: 15px; letter-spacing: 3px; }
