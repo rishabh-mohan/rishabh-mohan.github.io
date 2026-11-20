@@ -404,24 +404,12 @@ function demoFor(project) {
   const demo = node('div', '', 'demo');
   const out = node('output');
   if (project.demo === 'd31') {
-    const choose = (label, callback) => {
-      const button = node('button', label);
-      button.type = 'button';
-      button.addEventListener('click', callback);
-      return button;
-    };
-    const study = choose('Study', () => finish('17:00 · Academics +2'));
-    const walk = choose('Take a walk', () => finish('17:00 · Energy +2'));
-    const reset = choose('Restart turn', () => {
-      out.textContent = '16:00 · One hour free. Choose an activity.';
-      study.disabled = walk.disabled = false;
-    });
-    function finish(result) {
-      out.textContent = result;
-      study.disabled = walk.disabled = true;
-    }
-    reset.click();
-    demo.append(node('p', 'Sample turn'), study, walk, reset, out);
+    // d31 is a clean-room rebuild, so the demo points at the original game instead of a mock turn.
+    const link = node('a', 'Korean Student Simulator on Google Play ↗');
+    link.href = 'https://play.google.com/store/apps/details?id=com.basakansoft.koreanstudentsimulator';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    demo.append(node('p', 'd31 is a clean-room rebuild of Korean Student Simulator’s 31-Day Mode, by Basakansoft. Play the original:'), link);
   } else if (project.demo === 'export') {
     const label = node('label', 'Format ');
     const format = node('select');

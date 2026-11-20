@@ -26,8 +26,8 @@ const projects = [
     tagline: 'Balance study, work and rest, then create your own campaigns with Pack Studio.',
     detail: [
       'A playable life-sim prototype where daily choices shape a character’s progress. Manage time, money and stamina, prepare for exams, and explore branching stories. Pack Studio lets you create your own campaigns on Android.',
-      'Try a short, simplified turn to see how an activity trades time for a stat.',
-      'Inspired by 31-Day Mode, the simulation balances study, work and rest against time, money and stamina. Branching encounters respond to choices and game state.',
+      'd31 is a clean-room rebuild of Korean Student Simulator’s 31-Day Mode. Play the original game to see what it recreates.',
+      'Rebuilt from 31-Day Mode, the simulation balances study, work and rest against time, money and stamina. Branching encounters respond to choices and game state.',
       'Pack Studio lets creators edit characters, places, items and story choices through forms. The Flutter game reads those campaigns from JSON content packs.',
       'Creators can start from an example campaign, add artwork and colors, and build a new scenario without changing engine code.',
       'Explore the game engine and the companion editor.'
