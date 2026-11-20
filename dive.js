@@ -423,11 +423,35 @@
     timers.forEach(clearTimeout); timers = []; tween = null;
     cam = camEnd; phase = 'done'; chipShown = false; swarm = null;
     dive.classList.remove('playing', 'zap', 'chip-in', 'sinking', 'gone');
-    typed.textContent = name; answer.classList.remove('empty'); diveBtn.classList.remove('press', 'spent');
+    typed.textContent = name; answer.classList.remove('blank'); diveBtn.classList.remove('press', 'spent');
     depthEl.textContent = '1,000m'; scoreEl.textContent = '100';
-    removeEventListener('pointerdown', skip); removeEventListener('keydown', skip);
+    lock(false);
   };
-  const skip = event => { if (!event.target.closest || !event.target.closest('.menu, .menu-btn')) finish(); };
+  // While playing: a quick tap (or Enter/Escape) skips; drags, swipes, wheel and scroll keys do nothing,
+  // and the page is held still so the opening stays on screen.
+  let tap = null;
+  const inMenu = event => event.target.closest && event.target.closest('.menu, .menu-btn');
+  const onDown = event => { tap = inMenu(event) ? null : { x: event.clientX, y: event.clientY, t: performance.now() }; };
+  const onUp = event => {
+    const d = tap; tap = null;
+    if (d && Math.hypot(event.clientX - d.x, event.clientY - d.y) < 10 && performance.now() - d.t < 500) finish();
+  };
+  const onCancel = () => { tap = null; };
+  const hold = event => { if (event.cancelable) event.preventDefault(); };
+  const SCROLL_KEYS = new Set([' ', 'ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End']);
+  const onKey = event => {
+    if ((event.key === 'Escape' || event.key === 'Enter') && !inMenu(event)) finish();
+    else if (SCROLL_KEYS.has(event.key)) event.preventDefault();
+  };
+  const lock = on => {
+    const f = on ? 'addEventListener' : 'removeEventListener', opts = { passive: false };
+    window[f]('pointerdown', onDown); window[f]('pointerup', onUp); window[f]('pointercancel', onCancel);
+    window[f]('keydown', onKey); window[f]('touchmove', hold, opts); window[f]('wheel', hold, opts);
+    document.documentElement.classList.toggle('dive-lock', on);
+    tap = null;
+  };
+  // Match the visible screen. Once the visitor has scrolled past the top, leave it alone so the page doesn't shift.
+  const fit = () => { if (phase !== 'done' || scrollY < 8) dive.style.setProperty('--dive-h', innerHeight + 'px'); };
 
   const play = () => {
     finish();
@@ -435,11 +459,12 @@
     phase = 'card'; cam = 0; bubbles = [];
     [mascot.x, mascot.y] = mascotIdle(); [mascot.tx, mascot.ty] = mascotIdle();
     dive.classList.add('playing');
-    typed.textContent = ''; answer.classList.add('empty'); depthEl.textContent = '0m'; scoreEl.textContent = '0'; timer.textContent = '25';
-    addEventListener('pointerdown', skip); addEventListener('keydown', skip);
+    typed.textContent = ''; answer.classList.add('blank'); depthEl.textContent = '0m'; scoreEl.textContent = '0'; timer.textContent = '25';
+    if (scrollY) scrollTo(0, 0);
+    lock(true); fit(); layout();
     for (let sec = 1; sec <= 9; sec++) at(450 + sec * 1000, () => { timer.textContent = 25 - sec; });
     let s = 1500;
-    [...name].forEach((_, i) => at(s += rand(90, 160), () => { typed.textContent = name.slice(0, i + 1); answer.classList.remove('empty'); }));
+    [...name].forEach((_, i) => at(s += rand(90, 160), () => { typed.textContent = name.slice(0, i + 1); answer.classList.remove('blank'); }));
     at(s += 600, () => diveBtn.classList.add('press'));
     // Submit: the button spends, bubbles burst up from below.
     at(s += 140, () => {
@@ -472,11 +497,19 @@
   };
 
   // ---------- Wiring ----------
-  layout();
+  fit(); layout();
   drawBadge();
   if (document.fonts) document.fonts.load(FONT).then(() => { layout(); drawBadge(); if (phase === 'done') cam = camEnd; if (reduced) draw(performance.now()); });
   [mascot.x, mascot.y] = mascotIdle();
-  addEventListener('resize', () => { const k = cam === camEnd; layout(); if (k || phase === 'done') cam = camEnd; if (reduced) { running = false; draw(performance.now()); } });
+  addEventListener('resize', () => {
+    const k = cam === camEnd;
+    fit(); layout();
+    // Keep a running descent, the swarm and the krill aimed at the new size.
+    if (tween) tween.to = camEnd;
+    else if (k || phase === 'done' || phase === 'landed' || phase === 'counting') cam = camEnd;
+    if (swarm) { mascot.tx = w / 2 + 84; mascot.ty = chipY - 52; } else if (phase === 'card') [mascot.tx, mascot.ty] = mascotIdle();
+    if (reduced) { running = false; draw(performance.now()); }
+  });
   const menuBtn = dive.querySelector('.menu-btn'), menu = dive.querySelector('.menu');
   menuBtn.addEventListener('click', () => { const open = menu.hidden; menu.hidden = !open; menuBtn.setAttribute('aria-expanded', open); });
   menu.addEventListener('click', event => { if (event.target.closest('a, button')) { menu.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); } });

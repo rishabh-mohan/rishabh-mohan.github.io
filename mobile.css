@@ -36,7 +36,9 @@
   #mobile .dive p { margin: 0; }
 
   /* ---------- Opening: Name a SWE ---------- */
-  .dive { height: 100svh; min-height: 600px; overflow: hidden; background: linear-gradient(#123d66, #050a14); }
+  /* --dive-h is the visible height (set by dive.js), so the opening fills the screen with or without the browser bar. */
+  html.dive-lock, html.dive-lock body { overflow: hidden; overscroll-behavior: none; touch-action: none; }
+  .dive { height: var(--dive-h, 100dvh); overflow: hidden; background: linear-gradient(#123d66, #050a14); }
   .dive::after { content: ""; position: absolute; inset: 0; z-index: 6; background: #ffe58a; opacity: 0; pointer-events: none; mix-blend-mode: overlay; }
   .crt { position: absolute; inset: 0; z-index: 5; pointer-events: none;
     background: repeating-linear-gradient(0deg, rgba(0,0,0,.2) 0 1px, transparent 1px 3px), radial-gradient(at 50% 45%, transparent 55%, rgba(2,4,10,.75)); }
@@ -93,14 +95,16 @@
   .sonar::before { content: ""; position: absolute; left: 50%; top: 50%; width: 42%; height: 2px; margin-top: -1px; transform-origin: left center; background: linear-gradient(90deg, rgba(77,227,255,.9), transparent); box-shadow: 0 0 8px rgba(77,227,255,.8); animation: m-spin 2.4s linear infinite; }
   .timer { position: relative; color: var(--m-cyan); font-size: 24px; text-shadow: 0 0 10px rgba(77,227,255,.7); }
   .input-col { flex: 1; min-width: 0; }
-  .answer { display: block; height: 53px; box-sizing: border-box; padding: 12px 10px 7px; font-size: 22px; letter-spacing: .88px; white-space: nowrap; overflow: hidden; background: rgba(11,21,38,.92); border: 2px solid rgba(77,227,255,.65); }
-  .caret { display: inline-block; width: 2px; height: 1em; margin-left: 1px; vertical-align: -.15em; background: var(--m-pink); animation: m-blink 1s steps(1) infinite; }
-  .placeholder { display: none; color: rgba(125,147,184,.75); }
-  .answer.empty .placeholder { display: inline; }
-  .answer.empty .caret { margin: 0 2px 0 0; }
+  /* One flex row centred the same way whether empty or typing, so the text and caret never jump. */
+  .answer { display: flex; align-items: center; height: 53px; box-sizing: border-box; padding: 3px 10px 0; font-size: 22px; line-height: 1; letter-spacing: .88px; white-space: nowrap; overflow: hidden; background: rgba(11,21,38,.92); border: 2px solid rgba(77,227,255,.65); }
+  .typed { white-space: pre; }
+  .caret { flex: none; display: inline-block; width: 2px; height: 1em; margin-left: 1px; vertical-align: -.15em; background: var(--m-pink); animation: m-blink 1s steps(1) infinite; }
+  .placeholder { display: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: rgba(125,147,184,.75); }
+  .answer.blank .placeholder { display: inline; }
+  .answer.blank .caret { margin: 0 2px 0 0; }
   .fuse { display: block; height: 5px; margin-top: 4px; background: var(--m-cyan); box-shadow: 0 0 8px rgba(77,227,255,.6); transform-origin: left; animation: m-fuse 25s linear both; }
   .dive-btn { flex: none; padding: 13px 16px 11px; font-size: 21px; letter-spacing: 2.52px; color: var(--m-bg); background: var(--m-pink); box-shadow: 0 0 0 2px #050a14, 0 3px 0 2px #7d1d3c, 0 0 16px rgba(255,93,143,.45); transition: transform 80ms, box-shadow 80ms, background-color .3s, color .3s, opacity .3s; }
-  .dock:has(.answer.empty) .dive-btn { opacity: .55; box-shadow: 0 0 0 2px #050a14, 0 3px 0 2px #4a1426; }
+  .dock:has(.answer.blank) .dive-btn { opacity: .55; box-shadow: 0 0 0 2px #050a14, 0 3px 0 2px #4a1426; }
   .dive-btn.press { transform: translateY(3px); box-shadow: 0 0 0 2px #050a14, 0 0 0 2px #7d1d3c, 0 0 26px rgba(255,93,143,.8); }
   .dive-btn.spent { background: #7a2c4a; color: transparent; box-shadow: 0 0 0 2px #050a14, 0 3px 0 2px #3d1222; }
   .chip {
