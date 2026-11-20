@@ -8,13 +8,26 @@ const posts = [];
   const root = document.getElementById('mobile');
   const el = (tag, props = {}, ...kids) => { const node = Object.assign(document.createElement(tag), props); node.append(...kids); return node; };
   const links = list => el('p', { className: 'links' }, ...list.map(([text, href]) => el('a', { className: 'btn', href, textContent: `${text} ↗` })));
+  const iconImg = icon => el('img', { className: 'project-icon', src: 'assets/' + icon, alt: '', width: 36, height: 36 });
+  // "d31 + Pack Studio" with two icons puts each icon beside its own name.
+  const headingParts = project => {
+    const icons = [].concat(project.icon || []);
+    const names = project.name.split(' + ');
+    if (icons.length > 1 && icons.length === names.length) {
+      return names.flatMap((name, k) => [
+        ...(k ? [el('span', { className: 'title-plus', textContent: '+' })] : []),
+        el('span', { className: 'title-part' }, iconImg(icons[k]), el('span', { textContent: name }))
+      ]);
+    }
+    return [...icons.map(iconImg), el('span', { textContent: project.name })];
+  };
 
   // Top projects: the first four in projects.js.
   root.querySelector('.project-list').append(...projects.slice(0, 4).map((project, i) => {
     const more = mobileProjectDetails[project.name];
     const card = el('article', { className: 'project' },
       el('p', { className: 'kicker', textContent: `PROJECT ${String(i + 1).padStart(2, '0')}` }),
-      el('h3', { className: 'project-heading' }, ...[].concat(project.icon || []).map(icon => el('img', { className: 'project-icon', src: 'assets/' + icon, alt: '', width: 36, height: 36 })), el('span', { textContent: project.name })),
+      el('h3', { className: 'project-heading' }, ...headingParts(project)),
       el('p', { className: 'tag', textContent: project.tagline }));
     if (project.gallery) {
       card.append(el('figure', { className: 'media screenshot-strip' }, ...project.gallery.map(([file, alt, width, height]) =>
