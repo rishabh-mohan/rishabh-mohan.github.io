@@ -20,12 +20,12 @@ const projects = [
   },
   {
     name: 'd31 + Pack Studio',
-    tagline: 'A life-sim engine whose scenarios are all JSON, plus an Android pack editor.',
+    tagline: 'Balance study, work and rest, then create your own campaigns with Pack Studio.',
     detail: [
-      'A life-sim game and companion Android editor built for creating new campaigns. The playable prototype separates the simulation from its content, so creators can change the world without rewriting the game.',
+      'A playable life-sim prototype where daily choices shape a character’s progress. Manage time, money and stamina, prepare for exams, and explore branching stories. Pack Studio lets you create your own campaigns on Android.',
       'Try a short, simplified turn to see how an activity trades time for a stat.',
       'Inspired by 31-Day Mode, the simulation balances study, work and rest against time, money and stamina. Branching encounters respond to choices and game state.',
-      'The Dart and Flutter engine loads editable JSON content packs. Pack Studio provides forms for characters, locations and events, with automatic saving and validation by the same engine that runs the game.',
+      'Pack Studio lets creators edit characters, places, items and story choices through forms. The Flutter game reads those campaigns from JSON content packs.',
       'Creators can start from an example campaign, add artwork and colors, and build a new scenario without changing engine code.',
       'Explore the game engine and the companion editor.'
     ],
@@ -41,7 +41,7 @@ const projects = [
       'A terminal tool for taking Royal Road stories offline. Search by title or paste a story link, then export a book in the format that suits your reader.',
       'Choose a sample book format and preview the resulting filename.',
       'Serialized fiction can span hundreds of web pages. The exporter gathers chapters into a whole book or smaller chapter groups for offline reading.',
-      'Node.js and Playwright collect visible chapter text and export TXT, PDF or EPUB. Chapter retries, protected file writes and reruns that skip completed exports help recover from interrupted downloads.',
+      'The Node.js tool gathers chapters with Playwright and saves them as TXT, PDF or EPUB. If a download is interrupted, rerun it to retry missing exports while keeping completed files.',
       'Readers can choose a format for their device on Windows or macOS, with automatic first-run setup. Exports focus on text rather than illustrations or page styling.',
       'See the CLI source, usage, and the available export formats.'
     ],
@@ -57,7 +57,7 @@ const projects = [
       'A bridge from browser-based Gemini Enterprise accounts to terminal coding tools. Built to make Purdue’s existing AI access usable in a coding workflow without a separate API key.',
       'Point OpenCode at the bridge, pick a model with /models, and it reads and edits files like any coding agent.',
       'Purdue offers Gemini Enterprise in the browser, but students don’t get an API key to use it from coding tools.',
-      'A Python server exposes an OpenAI-compatible interface backed by a signed-in browser. It supports chat-emulated tool calls, image and PDF attachments, queued requests, cancellation and timeouts.',
+      'A Python bridge connects OpenCode to a signed-in Gemini Enterprise browser. Choose an available model and include screenshots or PDFs alongside requests to read, explain or edit project files.',
       'Developers can use their organization’s available models inside OpenCode with the normal sign-in flow. This is an independent project, not an official Google integration.',
       'Find the setup steps, supported models, and launcher on GitHub.'
     ],
@@ -72,11 +72,11 @@ const projects = [
     sections: ['This Site', 'd31', 'rr-scraper', 'Gemini Bridge', 'Brightspace Wrapper', 'Pack Studio'],
     detail: [
       'This portfolio: six windows you can rearrange, framed by ASCII scenery that changes theme on every shuffle.',
-      'A playable Flutter life-sim with branching encounters and editable campaigns. Pack Studio makes those campaigns easier to create on Android.',
+      'A life-sim where players balance study, work and rest, prepare for exams and explore branching stories.',
       'Take Royal Road stories offline as TXT, PDF or EPUB, with chapter grouping and recovery from interrupted downloads.',
-      'An OpenAI-compatible server that relays coding-agent requests through a signed-in Gemini Enterprise browser window.',
+      'Use an existing Gemini Enterprise account to read, explain and edit code in OpenCode, without a separate API key.',
       'A Chrome and Firefox extension that brings courses, deadlines and what-if grades together, with optional Gradescope and Ed Discussion integrations.',
-      'An Android editor that validates d31 content packs with the same engine the game uses. Find all of these on GitHub.'
+      'Create d31 campaigns on Android by editing characters, places, items and story choices through forms. Find all of these on GitHub.'
     ],
     art: '+---+ +---+ +---+\n| 1 | | 2 | | 3 |\n+---+ +---+ +---+\n| 4 | | 5 | | 6 |\n+---+ +---+ +---+',
     artAlt: 'Diagram: six numbered windows in a three-by-two grid',

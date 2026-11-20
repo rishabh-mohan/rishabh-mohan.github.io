@@ -2,37 +2,38 @@
 // Public sources: github.com/rishabh-mohan/{brightspace-canvas-wrapper,d31,pack-studio,rr-scraper,hydrogen-bridge,gemini-api}.
 // Additional local sources: canvas-personal, gemini-api, purdue/purdue-course-request-planner.
 // Shared introductions live in projects.js; these are mobile-only supporting details.
+// Order highlights by everyday usefulness, not implementation effort or release history.
 const mobileProjectDetails = {
   'Brightspace Canvas Wrapper': {
     stack: ['JavaScript', 'Browser extension', 'Brightspace'],
     highlights: [
-      'Plan ahead with a shared calendar and what-if grades that account for dropped assignments.',
-      'Connect Gradescope and Ed Discussion to bring work together without listing the same assignment twice.',
-      'Pin course resources, submit files and reply to discussions from one interface, using an existing school sign-in.'
+      'See what is due next, open course materials and check grades from one dashboard.',
+      'Bring Gradescope and Ed Discussion assignments into the same task lists and calendar, without duplicate reminders.',
+      'Try what-if scores to see how upcoming assignments could affect a course grade.'
     ]
   },
   'd31 + Pack Studio': {
     stack: ['Dart', 'Flutter', 'JSON content packs', 'Android'],
     highlights: [
       'Balance study, work and rest while managing time, money and stamina. Branching encounters respond to choices and game state.',
-      'Create characters, locations and events through Pack Studio’s forms, with automatic saving and validation by the same engine that runs the game.',
-      'Start from an example campaign, add artwork and colors, and build a new scenario with editable JSON content packs.'
+      'Choose a character and traits, work toward exams, and explore different outcomes across runs.',
+      'Make your own campaigns with Pack Studio: edit characters, places, items and story choices through Android forms.'
     ]
   },
   'rr-scraper': {
     stack: ['Node.js', 'Playwright', 'Cheerio', 'PDFKit', 'JSZip'],
     highlights: [
-      'Choose TXT, PDF or EPUB, with the whole story in one file or split into chapter groups.',
-      'Recover from interrupted downloads with chapter retries, protected file writes and reruns that skip completed exports.',
-      'Runs on Windows and macOS with automatic first-run setup. Exports focus on readable text rather than illustrations or page styling.'
+      'Find a story by title or paste its link, then save it as TXT, PDF or EPUB for offline reading.',
+      'Download the whole story as one book or split it into smaller chapter groups.',
+      'Rerun an interrupted download to retry missing exports while keeping completed files.'
     ]
   },
   'Gemini Bridge': {
     stack: ['Python', 'Playwright', 'OpenCode', 'OpenAI-compatible API'],
     highlights: [
-      'Connect OpenCode to read and edit project files, select an available model, and include images or PDFs in a request.',
-      'An OpenAI-compatible interface connects coding clients to a signed-in browser, with queued requests, cancellation and timeout handling.',
-      'Uses the organization’s normal sign-in flow. An independent project, not an official Google integration.'
+      'Ask a coding agent to read, explain and edit project files directly from OpenCode.',
+      'Choose among the models available through an existing Gemini Enterprise account, without a separate API key.',
+      'Include screenshots or PDFs when a task needs more context than text alone.'
     ]
   }
 };

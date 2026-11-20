@@ -25,8 +25,8 @@ const posts = [];
     card.append(el('p', { className: 'body', textContent: project.detail[0] }));
     if (more) {
       card.append(
-        el('ul', { className: 'tags project-stack', ariaLabel: 'Technologies' }, ...more.stack.map(text => el('li', { textContent: text }))),
-        el('ul', { className: 'project-highlights body' }, ...more.highlights.map(text => el('li', { textContent: text })))
+        el('ul', { className: 'project-highlights body' }, ...more.highlights.map(text => el('li', { textContent: text }))),
+        el('ul', { className: 'tags project-stack', ariaLabel: 'Technologies' }, ...more.stack.map(text => el('li', { textContent: text })))
       );
     }
     card.append(links(project.links));
