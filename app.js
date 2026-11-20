@@ -383,7 +383,10 @@ document.addEventListener('keydown', event => {
     return;
   }
   if (busy || !themeMenu.hidden || event.target.closest('input, textarea, select, [contenteditable]')) return;
-  if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || !/^[1-6]$/.test(event.key)) {
+  // Digit row by character (works on any layout); numpad by physical key, so it works with NumLock off too
+  // (NumLock off sends End, ArrowDown, PageDown, ... as the key).
+  const digit = /^[1-6]$/.test(event.key) ? event.key : /^Numpad([1-6])$/.exec(event.code)?.[1];
+  if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey || !digit) {
     if (selected !== null) {
       selectSlot(null);
       status.textContent = 'Swap canceled.';
@@ -391,7 +394,7 @@ document.addEventListener('keydown', event => {
     return;
   }
   event.preventDefault();
-  const next = Number(event.key) - 1;
+  const next = Number(digit) - 1;
   if (selected === null) selectSlot(next);
   else {
     const first = selected;
