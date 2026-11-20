@@ -69,7 +69,7 @@ const projects = [
     name: 'Currently Working On',
     tagline: 'What I’m building and improving right now.',
     // This window is a list of projects, so each section is named after one.
-    sections: ['This Site', 'D30 Mode', 'rr-scraper', 'Gemini Bridge', 'Brightspace Wrapper', 'Pack Studio'],
+    sections: ['This Site', 'd31', 'rr-scraper', 'Gemini Bridge', 'Brightspace Wrapper', 'Pack Studio'],
     detail: [
       'This portfolio: six windows you can rearrange, framed by ASCII scenery that changes theme on every shuffle.',
       'A playable Flutter life-sim with branching encounters and editable campaigns. Pack Studio makes those campaigns easier to create on Android.',
@@ -90,7 +90,7 @@ const projects = [
       'Languages: JavaScript, Java, HTML/CSS, SQL (PostgreSQL), R, Python, Dart. Frameworks: Node.js, Playwright, Cheerio, PDFKit, JSZip, Flutter. Tools: Git, LaTeX, JSON, ADB, Regex, Linux.',
       'Technical Systems Analyst Intern at Ayris Global (May 2024 – July 2026): drafted a provisional patent for the Assure PAT payment-testing platform, ran functional and visual QA, and helped present it to Discover’s certification teams.',
       'B.S. in Computer Science at Purdue University, expected May 2029. Adlai E. Stevenson High School, Highest Honors, 4.25 weighted GPA.',
-      'D30 Mode (Flutter simulation engine), Royal Road Text Scraper (Node.js exporter), Modular Maze Solver (Java pathfinding), and two TTRPG campaign engines built in Google Sheets.',
+      'd31 (Flutter simulation engine), rr-scraper (Node.js exporter), Modular Maze Solver (Java pathfinding), and two TTRPG campaign engines built in Google Sheets.',
       'Lead Math Tutor at Eye Level Learning Center (Nov 2024 – Aug 2026): tutored 200+ students from pre-K through trigonometry and redesigned a grading workflow most tutors adopted.',
       'Download the full one-page resume as a PDF, or find me on LinkedIn and GitHub.'
     ],
