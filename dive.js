@@ -11,6 +11,7 @@
   const FONT = '600 8px "IBM Plex Mono", ui-monospace, monospace', SPRITE = '"IBM Plex Mono", ui-monospace, monospace';
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canvas = dive.querySelector('.scene'), ctx = canvas.getContext('2d');
+  const fxCanvas = dive.querySelector('.fx'), fx = fxCanvas.getContext('2d'); // krill swim above the name card
   const world = dive.querySelector('.world');
   const depthEl = dive.querySelector('.depth'), scoreEl = dive.querySelector('.score');
   const typed = dive.querySelector('.typed'), answer = dive.querySelector('.answer'), timer = dive.querySelector('.timer');
@@ -152,7 +153,7 @@
   const ledgeTop = (side, x) => { for (let m = 360; m < 560; m += 1) if (rock(side, side ? w - x : x, m)) return depthY(m); return depthY(560); };
   const layout = () => {
     w = dive.clientWidth; h = dive.clientHeight; dpr = Math.min(2, devicePixelRatio || 1);
-    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    canvas.width = fxCanvas.width = Math.round(w * dpr); canvas.height = fxCanvas.height = Math.round(h * dpr);
     ctx.font = FONT; CW = ctx.measureText('M').width || 4.8; CH = 8;
     chipY = h * .44;
     camEnd = frozen ? +frozen[1] : depthY(1000) - chipY;
@@ -383,16 +384,17 @@
     });
     // Krill: the mascot idles bottom-left, then joins the answer chip with its swarm.
     mascot.x += (mascot.tx - mascot.x) * Math.min(1, dt * 6); mascot.y += (mascot.ty - mascot.y) * Math.min(1, dt * 6);
+    fx.setTransform(dpr, 0, 0, dpr, 0, 0); fx.clearRect(0, 0, w, h); fx.textBaseline = 'top';
     if (phase === 'card' || phase === 'chip') {
       if (swarm) {
-        ctx.font = `600 10px ${SPRITE}`;
+        fx.font = `600 10px ${SPRITE}`;
         for (const s of swarm) {
           const a = s.a + t * s.v, right = -Math.sin(a) * s.v > 0;
-          ctx.fillStyle = s.c;
-          ctx.fillText(right ? '~)>' : '<(~', w / 2 + Math.cos(a) * s.rx - 8, chipY + Math.sin(a) * s.ry - 6);
+          fx.fillStyle = s.c;
+          fx.fillText(right ? '~)>' : '<(~', w / 2 + Math.cos(a) * s.rx - 8, chipY + Math.sin(a) * s.ry - 6);
         }
       }
-      drawKrill(ctx, mascot.x + 40, mascot.y + 26 + Math.sin(t * 2.4) * 4, PINK, swarm !== null, '#14040c', 1.4);
+      drawKrill(fx, mascot.x + 40, mascot.y + 26 + Math.sin(t * 2.4) * 4, PINK, swarm !== null, '#14040c', 1.4);
     }
     // Lines light up as the answer sinks past them.
     if (chipShown) for (const el of tiers) el.classList.toggle('lit', el._y - cam < chipY + 4);
