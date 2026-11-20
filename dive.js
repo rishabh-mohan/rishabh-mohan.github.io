@@ -444,8 +444,11 @@
     if ((event.key === 'Escape' || event.key === 'Enter') && !inMenu(event)) finish();
     else if (SCROLL_KEYS.has(event.key)) event.preventDefault();
   };
+  // overflow:hidden doesn't stop a fling already in motion or a programmatic scroll; pull the page back to the top.
+  const keepTop = () => { if (scrollY) scrollTo(0, 0); };
   const lock = on => {
     const f = on ? 'addEventListener' : 'removeEventListener', opts = { passive: false };
+    window[f]('scroll', keepTop);
     window[f]('pointerdown', onDown); window[f]('pointerup', onUp); window[f]('pointercancel', onCancel);
     window[f]('keydown', onKey); window[f]('touchmove', hold, opts); window[f]('wheel', hold, opts);
     document.documentElement.classList.toggle('dive-lock', on);
