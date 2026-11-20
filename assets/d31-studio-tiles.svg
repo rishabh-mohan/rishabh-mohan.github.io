@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" width="720" height="400">
+  <title>Pack Studio, in numbers</title>
+  <desc>Six colour presets or custom colours; new packs start from the Workshop template; it saves as you edit; packs are checked by the real engine.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#21314c" stroke-width=".7"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 10 5-10 5" fill="#4de3ff"/></marker>
+  </defs>
+  <rect width="720" height="400" fill="#081222"/>
+  <rect width="720" height="400" fill="url(#grid)"/>
+  <g font-family="ui-monospace,monospace" text-anchor="middle">
+    <text x="360.0" y="47" font-size="24" fill="#e8f1ff">Pack Studio, in numbers</text>
+    <rect x="30" y="80" width="320" height="122" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="54" y="130" font-size="32" fill="#ffd166" text-anchor="start">6</text><text x="54" y="162" font-size="14" fill="#a8bad2" text-anchor="start">colour presets, or</text><text x="54" y="184" font-size="14" fill="#a8bad2" text-anchor="start">your own colours</text><rect x="370" y="80" width="320" height="122" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="394" y="130" font-size="32" fill="#ffd166" text-anchor="start">1</text><text x="394" y="162" font-size="14" fill="#a8bad2" text-anchor="start">Workshop template with</text><text x="394" y="184" font-size="14" fill="#a8bad2" text-anchor="start">books and ten levels</text><rect x="30" y="222" width="320" height="122" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="54" y="272" font-size="32" fill="#ffd166" text-anchor="start">Auto</text><text x="54" y="304" font-size="14" fill="#a8bad2" text-anchor="start">saves as you edit,</text><text x="54" y="326" font-size="14" fill="#a8bad2" text-anchor="start">no export step</text><rect x="370" y="222" width="320" height="122" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="394" y="272" font-size="32" fill="#ffd166" text-anchor="start">✓</text><text x="394" y="304" font-size="14" fill="#a8bad2" text-anchor="start">packs checked by the</text><text x="394" y="326" font-size="14" fill="#a8bad2" text-anchor="start">real engine on load</text><text x="360" y="380" font-size="15" fill="#e8f1ff">Forms for every content type, plus an event builder</text>
+  </g>
+</svg>

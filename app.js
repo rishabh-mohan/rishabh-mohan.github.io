@@ -61,9 +61,27 @@ function embedFrame(project, lazy) {
   return frame;
 }
 
+function imageFigure([file, alt, width, height], lazy) {
+  const frame = node('figure', '', 'visual');
+  const image = node('img');
+  image.src = 'assets/' + file;
+  image.alt = alt;
+  image.width = width;
+  image.height = height;
+  image.decoding = 'async';
+  if (lazy) image.loading = 'lazy';
+  frame.append(image);
+  return frame;
+}
+
+// desktop-content.js can give each section its own picture, so windows don't all repeat the project's main image.
+const sectionImageFor = (project, section) => (typeof sectionImages !== 'undefined' && sectionImages[project.name]?.[section]) || null;
+
 function projectVisual(project, section, lazy = false) {
-  if (section === 5 && project.links) return linkBanner(project);
   if (section === 1 && project.embed) return embedFrame(project, lazy);
+  const own = sectionImageFor(project, section);
+  if (own) return imageFigure(own, lazy);
+  if (section === 5 && project.links) return linkBanner(project);
   if (project.gallery) {
     const frame = node('figure', '', 'visual screenshot-strip');
     project.gallery.forEach(([file, alt, width, height]) => {
@@ -83,16 +101,7 @@ function projectVisual(project, section, lazy = false) {
     art.setAttribute('aria-label', project.artAlt);
     return art;
   }
-  const frame = node('figure', '', 'visual');
-  const image = node('img');
-  image.src = 'assets/' + asset[0];
-  image.alt = asset[1];
-  image.width = asset[2];
-  image.height = asset[3];
-  image.decoding = 'async';
-  if (lazy) image.loading = 'lazy';
-  frame.append(image);
-  return frame;
+  return imageFigure(asset, lazy);
 }
 
 // Extra depth per section from desktop-content.js: text, figures, lists, steps, stats and code.
@@ -475,7 +484,7 @@ function openProject(slot, pushHistory = true) {
     const paragraph = node('p', index === slot || reduced.matches ? project.detail[index] : '');
     part.append(node('h3', label), paragraph);
     if (index !== slot) incoming.push([paragraph, project.detail[index]]);
-    if (index === 0 || (index === slot && index !== 5) || index === 5 || (index === 3 && project.extra) || (index === 1 && project.embed)) {
+    if (index === 0 || (index === slot && index !== 5) || index === 5 || (index === 3 && project.extra) || (index === 1 && project.embed) || sectionImageFor(project, index)) {
       part.append(projectVisual(project, index, index !== slot));
     }
     appendSectionExtras(part, project, index);

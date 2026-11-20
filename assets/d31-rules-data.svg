@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" width="720" height="400">
+  <title>The rules in code, the game in data</title>
+  <desc>The Dart engine holds only rules: conditions, event graphs and no content. The content pack holds the calendar, places, events, items, traits, characters and every tuning number.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#21314c" stroke-width=".7"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 10 5-10 5" fill="#4de3ff"/></marker>
+  </defs>
+  <rect width="720" height="400" fill="#081222"/>
+  <rect width="720" height="400" fill="url(#grid)"/>
+  <g font-family="ui-monospace,monospace" text-anchor="middle">
+    <text x="360.0" y="47" font-size="24" fill="#e8f1ff">The rules in code, the game in data</text>
+    <rect x="40" y="90" width="260" height="200" rx="10" fill="#111f37" stroke="#4de3ff" stroke-width="2"/><text x="170.0" y="126" font-size="15" fill="#4de3ff">ENGINE</text><text x="170.0" y="157" font-size="15" fill="#e8f1ff">Dart · rules only</text><text x="170.0" y="180" font-size="13" fill="#a8bad2">conditions</text><text x="170.0" y="203" font-size="13" fill="#a8bad2">event graphs</text><text x="170.0" y="226" font-size="13" fill="#a8bad2">0 lines of content</text><rect x="420" y="90" width="260" height="200" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="550.0" y="126" font-size="15" fill="#4de3ff">CONTENT PACK</text><text x="550.0" y="157" font-size="15" fill="#e8f1ff">JSON files</text><text x="550.0" y="180" font-size="13" fill="#a8bad2">calendar · places</text><text x="550.0" y="203" font-size="13" fill="#a8bad2">events · items</text><text x="550.0" y="226" font-size="13" fill="#a8bad2">traits · characters</text><text x="550.0" y="249" font-size="13" fill="#a8bad2">every tuning number</text><text x="360" y="178" font-size="13" fill="#a8bad2">read at start</text><path d="M419 192L302 192" stroke="#4de3ff" stroke-width="2" marker-end="url(#arrow)"/><text x="360" y="340" font-size="19" fill="#ffd166">A new campaign is a new folder</text><text x="360" y="372" font-size="15" fill="#a8bad2">No engine code changes</text>
+  </g>
+</svg>

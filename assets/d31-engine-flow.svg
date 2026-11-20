@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" width="720" height="400">
+  <title>From form to running game</title>
+  <desc>Pack Studio edits a pack through forms; the pack is a folder of JSON and images shared on the phone; the engine runs it with event_engine and conditions; the Flutter game shows it.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#21314c" stroke-width=".7"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 10 5-10 5" fill="#4de3ff"/></marker>
+  </defs>
+  <rect width="720" height="400" fill="#081222"/>
+  <rect width="720" height="400" fill="url(#grid)"/>
+  <g font-family="ui-monospace,monospace" text-anchor="middle">
+    <text x="360.0" y="47" font-size="24" fill="#e8f1ff">From form to running game</text>
+    <rect x="24" y="120" width="160" height="150" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="104.0" y="156" font-size="15" fill="#4de3ff">PACK STUDIO</text><text x="104.0" y="187" font-size="15" fill="#e8f1ff">Android forms</text><text x="104.0" y="210" font-size="13" fill="#a8bad2">event builder</text><path d="M185 195.0L199 195.0" stroke="#4de3ff" stroke-width="2" marker-end="url(#arrow)"/><rect x="200" y="120" width="160" height="150" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="280.0" y="156" font-size="15" fill="#4de3ff">PACK FOLDER</text><text x="280.0" y="187" font-size="15" fill="#e8f1ff">JSON + images</text><text x="280.0" y="210" font-size="13" fill="#a8bad2">shared on phone</text><path d="M361 195.0L375 195.0" stroke="#4de3ff" stroke-width="2" marker-end="url(#arrow)"/><rect x="376" y="120" width="160" height="150" rx="10" fill="#111f37" stroke="#4de3ff" stroke-width="2"/><text x="456.0" y="156" font-size="15" fill="#4de3ff">ENGINE</text><text x="456.0" y="187" font-size="15" fill="#e8f1ff">event_engine</text><text x="456.0" y="210" font-size="13" fill="#a8bad2">conditions</text><path d="M537 195.0L551 195.0" stroke="#4de3ff" stroke-width="2" marker-end="url(#arrow)"/><rect x="552" y="120" width="160" height="150" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="632.0" y="156" font-size="15" fill="#4de3ff">GAME</text><text x="632.0" y="187" font-size="15" fill="#e8f1ff">Flutter UI</text><text x="632.0" y="210" font-size="13" fill="#a8bad2">Android, Windows</text><text x="360" y="320" font-size="15" fill="#a8bad2">Developer panel: reload the pack from disk, fire any event</text><text x="360" y="355" font-size="18" fill="#ffd166">The engine only knows rules</text>
+  </g>
+</svg>

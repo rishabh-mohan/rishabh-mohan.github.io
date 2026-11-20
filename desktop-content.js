@@ -19,6 +19,43 @@ const desktopImages = {
   'Brightspace Canvas Wrapper': ['brightspace-dash.webp', 'Canvas-style dashboard with course cards, a To Do sidebar and recent feedback, shown with sample courses', 1200, 750]
 };
 
+// One picture per section, so a project's windows don't all repeat its main image. Sections left out fall back to
+// the main image (Intro), the live demo (Brightspace Demo) or the link banner (Check It Out). No picture here
+// repeats one shown elsewhere in the same project, including the figures in desktopBlocks.
+const sectionImages = {
+  'Brightspace Canvas Wrapper': {
+    2: ['brightspace-connections.webp', 'Connected Sites page linking Gradescope and Ed Discussion courses to Brightspace courses, shown with sample courses', 1200, 750],
+    3: ['brightspace-modules.webp', 'Course modules with Gradescope and Ed Discussion items listed alongside Brightspace content, shown with sample courses', 1200, 750],
+    4: ['brightspace-whatif.webp', 'Grades page in What-If mode with edited scores and a recalculated total, shown with sample courses', 1200, 750]
+  },
+  'd31 + Pack Studio': {
+    1: ['d31-day-loop.svg', 'Diagram of one d31 day: deal action blocks, spend time, stamina and money, react to events, grow stats, fifteen ticks a day', 720, 400],
+    2: ['d31-rules-data.svg', 'Diagram: the Dart engine holds only rules, and a JSON content pack holds the calendar, places, events, items, traits, characters and tuning', 720, 400],
+    3: ['d31-engine-flow.svg', 'Diagram: Pack Studio forms write a pack folder of JSON and images, which the engine runs and the Flutter game shows', 720, 400],
+    4: ['d31-studio-tiles.svg', 'Pack Studio facts: six colour presets, a Workshop template, saves as you edit, packs checked by the real engine', 720, 400]
+  },
+  'rr-scraper': {
+    1: ['rr-scraper-groups.svg', 'Terminal: rr-scraper saving a 109-chapter story as five PDFs of 25 chapters, skipping a file that already exists', 650, 461],
+    2: ['rr-scraper-chapters.svg', 'Diagram: 109 chapter web pages become one EPUB, or five PDFs of 25 chapters', 720, 400],
+    3: ['rr-scraper-pipeline.svg', 'Diagram: search with Cheerio, read chapters with Playwright, write TXT, PDF or EPUB, save through a temporary .part file', 720, 400],
+    4: ['rr-scraper-retry.svg', 'Terminal: a chapter fails three times, its file is left unwritten, and a rerun skips the finished files and retries it', 650, 404]
+  },
+  'Gemini Bridge': {
+    1: ['gemini-bridge-launch.svg', 'Terminal: hydrogen-manual starting the bridge and OpenCode, and -BridgeOnly printing the base URL', 760, 224],
+    2: ['gemini-bridge-gap.svg', 'Diagram: Gemini Enterprise works in the browser, OpenCode needs an API with no key issued, and Gemini Bridge connects them locally', 720, 400],
+    3: ['gemini-bridge-log.svg', 'Bridge log: sign-in, model discovery, requests with effort levels, an upload, a hand-off and a content-filter re-ask', 760, 260],
+    4: ['gemini-bridge-reliability.svg', 'Reliability facts: one browser call at a time, 600 and 1,200 second timeouts, two content-filter re-asks, sign-in only on a real 401', 720, 400]
+  },
+  // Each section of this window is a project, so it shows that project's picture.
+  'Currently Working On': {
+    1: ['d31-gameplay.webp', 'd31 gameplay showing the schedule and activity choices', 466, 960],
+    2: ['rr-scraper-demo-still.svg', 'Terminal replay of a Royal Road story export', 650, 520],
+    3: ['gemini-bridge-diagram.svg', 'OpenCode sends coding requests through a local Gemini Bridge to a signed-in Gemini Enterprise browser session', 720, 400],
+    4: ['brightspace-list.webp', 'Dashboard List View with assignments grouped by day and checkboxes, shown with sample courses', 1200, 750],
+    5: ['pack-studio-editor.webp', 'Pack Studio: edit locations, traits, characters, books and items', 1080, 2288]
+  }
+};
+
 const sampleData = 'Sample courses from the extension’s own dev server.';
 
 const desktopBlocks = {

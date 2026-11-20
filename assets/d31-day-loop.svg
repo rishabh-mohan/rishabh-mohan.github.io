@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" width="720" height="400">
+  <title>One day, fifteen ticks</title>
+  <desc>Each tick deals a hand of action blocks, the player spends time, stamina and money, events react to choices, and stats grow. After 31 days come exam day, applications and an ending.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#21314c" stroke-width=".7"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 10 5-10 5" fill="#4de3ff"/></marker>
+  </defs>
+  <rect width="720" height="400" fill="#081222"/>
+  <rect width="720" height="400" fill="url(#grid)"/>
+  <g font-family="ui-monospace,monospace" text-anchor="middle">
+    <text x="360.0" y="47" font-size="24" fill="#e8f1ff">One day, fifteen ticks</text>
+    <rect x="24" y="96" width="160" height="140" rx="10" fill="#111f37" stroke="#4de3ff" stroke-width="2"/><text x="104.0" y="132" font-size="15" fill="#4de3ff">DEAL</text><text x="104.0" y="163" font-size="15" fill="#e8f1ff">a hand of</text><text x="104.0" y="186" font-size="13" fill="#a8bad2">action blocks</text><path d="M185 166.0L199 166.0" stroke="#4de3ff" stroke-width="2" marker-end="url(#arrow)"/><rect x="200" y="96" width="160" height="140" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="280.0" y="132" font-size="15" fill="#4de3ff">SPEND</text><text x="280.0" y="163" font-size="15" fill="#e8f1ff">time, stamina</text><text x="280.0" y="186" font-size="13" fill="#a8bad2">and money</text><path d="M361 166.0L375 166.0" stroke="#4de3ff" stroke-width="2" marker-end="url(#arrow)"/><rect x="376" y="96" width="160" height="140" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="456.0" y="132" font-size="15" fill="#4de3ff">REACT</text><text x="456.0" y="163" font-size="15" fill="#e8f1ff">events branch</text><text x="456.0" y="186" font-size="13" fill="#a8bad2">on choices</text><path d="M537 166.0L551 166.0" stroke="#4de3ff" stroke-width="2" marker-end="url(#arrow)"/><rect x="552" y="96" width="160" height="140" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="632.0" y="132" font-size="15" fill="#4de3ff">GROW</text><text x="632.0" y="163" font-size="15" fill="#e8f1ff">stats, levels</text><text x="632.0" y="186" font-size="13" fill="#a8bad2">study books</text><path d="M624 237V280H104V241" fill="none" stroke="#4de3ff" stroke-width="2" marker-end="url(#arrow)"/><text x="364" y="305" font-size="15" fill="#a8bad2">next tick · 15 a day</text><text x="360" y="360" font-size="19" fill="#ffd166">After 31 days: exam day, applications, an ending</text>
+  </g>
+</svg>

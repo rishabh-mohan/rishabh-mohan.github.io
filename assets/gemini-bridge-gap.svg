@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" width="720" height="400">
+  <title>Access in the browser, none in the terminal</title>
+  <desc>Gemini Enterprise works in the browser with a Purdue sign-in, but OpenCode needs an API and no key is issued. Gemini Bridge serves a local API on 127.0.0.1:8766 that connects the two.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#21314c" stroke-width=".7"/></pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="m0 0 10 5-10 5" fill="#4de3ff"/></marker>
+  </defs>
+  <rect width="720" height="400" fill="#081222"/>
+  <rect width="720" height="400" fill="url(#grid)"/>
+  <g font-family="ui-monospace,monospace" text-anchor="middle">
+    <text x="360.0" y="47" font-size="24" fill="#e8f1ff">Access in the browser, none in the terminal</text>
+    <rect x="24" y="90" width="240" height="170" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="144.0" y="126" font-size="15" fill="#4de3ff">IN THE BROWSER</text><text x="144.0" y="157" font-size="15" fill="#e8f1ff">Gemini Enterprise</text><text x="144.0" y="180" font-size="13" fill="#a8bad2">✓ Purdue sign-in</text><text x="144.0" y="203" font-size="13" fill="#a8bad2">✓ coding models</text><rect x="456" y="90" width="240" height="170" rx="10" fill="#111f37" stroke="#375271" stroke-width="2"/><text x="576.0" y="126" font-size="15" fill="#4de3ff">IN THE TERMINAL</text><text x="576.0" y="157" font-size="15" fill="#e8f1ff">OpenCode</text><text x="576.0" y="180" font-size="13" fill="#a8bad2">needs an API</text><text x="576.0" y="203" font-size="13" fill="#a8bad2">✗ no key issued</text><text x="360" y="185" font-size="44" fill="#ff8fa3">✗</text><text x="360" y="215" font-size="14" fill="#a8bad2">no API key</text><path d="M144 261V318H178M576 261V318H542" fill="none" stroke="#4de3ff" stroke-width="2"/><rect x="178" y="292" width="364" height="54" rx="10" fill="#111f37" stroke="#4de3ff" stroke-width="2"/><text x="360" y="316" font-size="15" fill="#4de3ff">GEMINI BRIDGE</text><text x="360" y="337" font-size="14" fill="#e8f1ff">local /v1 on 127.0.0.1:8766</text><text x="360" y="380" font-size="15" fill="#ffd166">Sign in once, in a normal browser window</text>
+  </g>
+</svg>
