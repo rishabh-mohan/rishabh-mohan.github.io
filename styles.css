@@ -213,6 +213,12 @@ nav, .toolbar, .motion { font-size: .82rem; }
 .demo input { width: 5rem; }
 .demo output { display: block; color: var(--accent); margin-top: .45rem; }
 .demo button { margin: .2rem .45rem .2rem 0; }
+/* Live demo frame (Brightspace wrapper). */
+.visual.embed { position: relative; display: block; padding: 0; }
+.visual.embed iframe { display: block; width: 100%; height: 100%; border: 0; background: #1f2933; }
+.embed-open { position: absolute; right: .4rem; bottom: .4rem; padding: .15rem .45rem; font-size: .75rem; background: var(--bar); border: 1px solid var(--edge); text-decoration: none; }
+.preview-details .visual.embed { height: clamp(16rem, 44vh, 30rem); }
+#project-content .visual.embed { height: min(70vh, 42rem); }
 /* Section depth from desktop-content.js. */
 .blocks { display: grid; gap: .7rem; margin-top: .8rem; }
 .blocks > *, .blocks figure { margin: 0; }

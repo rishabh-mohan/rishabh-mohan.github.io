@@ -45,8 +45,24 @@ function linkBanner(project) {
   return art;
 }
 
+// A live page in a frame (the Brightspace wrapper demo), with a way to open it full size.
+function embedFrame(project, lazy) {
+  const frame = node('figure', '', 'visual embed');
+  const view = node('iframe');
+  view.src = project.embed;
+  view.title = project.name + ' demo with two made-up classes';
+  if (lazy) view.loading = 'lazy';
+  const open = node('a', 'Open full size ↗', 'embed-open');
+  open.href = project.embed;
+  open.target = '_blank';
+  open.rel = 'noopener';
+  frame.append(view, open);
+  return frame;
+}
+
 function projectVisual(project, section, lazy = false) {
   if (section === 5 && project.links) return linkBanner(project);
+  if (section === 1 && project.embed) return embedFrame(project, lazy);
   if (project.gallery) {
     const frame = node('figure', '', 'visual screenshot-strip');
     project.gallery.forEach(([file, alt, width, height]) => {
@@ -310,42 +326,7 @@ document.addEventListener('keydown', event => {
 function demoFor(project) {
   const demo = node('div', '', 'demo');
   const out = node('output');
-  if (project.demo === 'grades') {
-    const classes = [
-      ['Algorithms', 'Recurrence worksheet', 84, 100],
-      ['Systems', 'Process lab', 93, 100]
-    ];
-    const pick = node('select');
-    classes.forEach(([name], index) => {
-      const option = node('option', name);
-      option.value = index;
-      pick.append(option);
-    });
-    const classLabel = node('label', 'Class ');
-    classLabel.append(pick);
-    const assignment = node('span');
-    const grade = node('input');
-    grade.type = 'number';
-    grade.min = 0;
-    grade.max = 20;
-    grade.value = 17;
-    const gradeLabel = node('label', 'What-if score (out of 20) ');
-    gradeLabel.append(grade);
-    function update() {
-      const [, task, earned, total] = classes[pick.value];
-      assignment.textContent = 'Assignment: ' + task;
-      if (grade.value === '' || !grade.validity.valid) {
-        out.textContent = 'Enter a score from 0 to 20.';
-        return;
-      }
-      out.textContent = 'Current: ' + (earned / total * 100).toFixed(1) + '% → What-if: ' + ((earned + grade.valueAsNumber) / (total + 20) * 100).toFixed(1) + '%';
-    }
-    pick.addEventListener('change', update);
-    grade.addEventListener('input', update);
-    demo.append(node('p', 'Sample dashboard data'), classLabel, node('p'), gradeLabel, out);
-    demo.children[2].append(assignment);
-    update();
-  } else if (project.demo === 'd31') {
+  if (project.demo === 'd31') {
     const choose = (label, callback) => {
       const button = node('button', label);
       button.type = 'button';
@@ -425,7 +406,7 @@ function openProject(slot, pushHistory = true) {
     const paragraph = node('p', index === slot || reduced.matches ? project.detail[index] : '');
     part.append(node('h3', label), paragraph);
     if (index !== slot) incoming.push([paragraph, project.detail[index]]);
-    if (index === 0 || (index === slot && index !== 5) || index === 5 || (index === 3 && project.extra)) {
+    if (index === 0 || (index === slot && index !== 5) || index === 5 || (index === 3 && project.extra) || (index === 1 && project.embed)) {
       part.append(projectVisual(project, index, index !== slot));
     }
     appendSectionExtras(part, project, index);

@@ -9,14 +9,15 @@ const projects = [
     tagline: 'A Chrome and Firefox extension that gives Brightspace a Canvas-style dashboard.',
     detail: [
       'A browser extension that brings courses, deadlines and grades into one Canvas-style dashboard for Brightspace students. Available for Chrome and Firefox.',
-      'Try two sample classes and see how an ungraded assignment could change your grade.',
+      'The real extension, running on two made-up classes. Open a course to browse its modules, assignments and announcements, try what-if grades, or check the calendar.',
       'Coursework is often spread across several sites. The wrapper brings Brightspace, Gradescope and Ed Discussion together, combining matching assignments to avoid duplicate reminders.',
       'The JavaScript extension uses an existing school sign-in to show course modules, pinned resources, file submissions and discussion replies in one interface.',
       'Students can plan ahead with a shared calendar and estimate grade outcomes with what-if scores that account for dropped assignments.',
       'Install from the Chrome Web Store or Firefox Add-ons, or explore the source on GitHub.'
     ],
     image: ['brightspace-demo-dashboard.webp', 'Brightspace dashboard with course cards and upcoming assignments', 1200, 708],
-    demo: 'grades',
+    // Static build of the extension on its dev-server data (website-notes/tools/build-bsx-demo.js).
+    embed: 'd2l/home/#/',
     links: [['Chrome Web Store', 'https://chromewebstore.google.com/detail/brightspace-canvas-wrappe/ediicphlmlkiglmhnmfdkinefbnbckbp'], ['Firefox Add-ons', 'https://addons.mozilla.org/en-US/firefox/addon/brightspace-canvas-wrapper/'], ['GitHub', 'https://github.com/rishabh-mohan/brightspace-canvas-wrapper']]
   },
   {

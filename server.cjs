@@ -9,11 +9,14 @@ const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascrip
 http.createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
-    const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
+    let file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
     if (!file.startsWith(root + path.sep)) {
       response.writeHead(403).end('Forbidden');
       return;
     }
+    // Like GitHub Pages: a folder address serves its index.html (used by the /d2l/home/ demo).
+    const stat = await fs.stat(file).catch(() => null);
+    if (stat && stat.isDirectory()) file = path.join(file, 'index.html');
     const content = await fs.readFile(file);
     response.writeHead(200, {
       'Content-Type': types[path.extname(file)] || 'application/octet-stream',

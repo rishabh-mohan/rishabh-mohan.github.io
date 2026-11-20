@@ -35,13 +35,13 @@ const desktopBlocks = {
       ]],
       ['tags', ['JavaScript', 'WebExtension', 'Firefox 140+', 'Chrome / Edge 121+', 'MIT']]
     ],
-    // Demo
+    // Demo: the live frame says it all; just point at the parts worth trying.
     [
-      ['img', 'brightspace-whatif.webp', 'Grades page with what-if scores entered and dropped scores struck through', 1200, 750, 'What-If grades. Drop rules are applied and dropped scores are struck through. ' + sampleData],
       ['list', [
-        'Locked items say why they can’t be changed.',
-        '“Calculate based only on graded assignments” and “Count items marked not counted” match how instructors set up the gradebook.',
-        'Gradescope scores fill in where Brightspace hasn’t posted one yet.'
+        'CS 25100 \u2192 Grades: type a what-if score and watch the total change. The lowest quiz is dropped.',
+        'CS 25100 \u2192 Assignments: Gradescope and Ed work is merged in, with duplicates folded into one item.',
+        'Dashboard \u22ee \u2192 Tasks Panel, or press ? for keyboard shortcuts.',
+        'Purdue extras (dining menus, BoilerClasses, class times) need live services, so they don\u2019t work in the demo.'
       ]]
     ],
     // Inspiration
@@ -70,6 +70,12 @@ const desktopBlocks = {
     // Impact
     [
       ['img', 'brightspace-tasks.webp', 'Dashboard with the weekly Tasks Panel and completion rings per course', 1200, 750, 'The Tasks Panel: a weekly sidebar with a completion ring per course. ' + sampleData],
+      ['h', 'Grades that match the gradebook'],
+      ['list', [
+        'Drop rules are applied, with dropped scores struck through. Locked items say why they can\u2019t be changed.',
+        '\u201cCalculate based only on graded assignments\u201d and \u201cCount items marked not counted\u201d match how instructors set up the gradebook.',
+        'Gradescope scores fill in where Brightspace hasn\u2019t posted one yet.'
+      ]],
       ['h', 'Purdue extras'],
       ['list', [
         'Dining menus for every dining court, with a food filter (beef also blocks steak and burgers) and favourites.',
