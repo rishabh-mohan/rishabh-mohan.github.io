@@ -32,7 +32,7 @@
       <path d="M505 215H456"/>
       <path d="M264 215H215"/>
     </g>
-    <text x="360" y="336" font-size="23" fill="#ffd166">Sign in once · No separate API key</text>
+    <text x="360" y="336" font-size="23" fill="#ffd166">Sign in once · OpenAI-compatible API</text>
     <text x="360" y="372" font-size="19" fill="#a8bad2">An independent browser integration</text>
   </g>
 </svg>

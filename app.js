@@ -403,12 +403,12 @@ document.addEventListener('keydown', event => {
 function demoFor(project) {
   const demo = node('div', '', 'demo');
   if (project.demo === 'd31') {
-    // d31 is a clean-room rebuild, so the demo points at the original game instead of a mock turn.
+    // d31 is an independent reimplementation, so the demo points at the original game instead of a mock turn.
     const link = node('a', 'Korean Student Simulator on Google Play ↗');
     link.href = 'https://play.google.com/store/apps/details?id=com.basakansoft.koreanstudentsimulator';
     link.target = '_blank';
     link.rel = 'noopener';
-    demo.append(node('p', 'd31 is a clean-room rebuild of Korean Student Simulator’s 31-Day Mode, by Basakansoft. Play the original:'), link);
+    demo.append(node('p', 'd31 is an independent reimplementation of Korean Student Simulator’s 31-Day Mode, by Basakansoft. Play the original:'), link);
   } else {
     return null;
   }

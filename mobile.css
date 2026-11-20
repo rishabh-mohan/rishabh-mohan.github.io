@@ -161,6 +161,8 @@
   .zone b { font-weight: normal; color: var(--m-cyan); text-shadow: 0 0 10px rgba(77,227,255,.5); }
   .zone::before { content: ""; width: 14px; border-top: 2px solid rgba(125,147,184,.45); }
   .zone::after { content: ""; flex: 1; border-top: 2px dashed rgba(125,147,184,.3); }
+  /* `display` above would override the hidden attribute (used for the blog until it has a post). */
+  .zone[hidden], #mobile .panel-section[hidden] { display: none; }
 
   /* Section header: the prompt card, reused. */
   .sec-head { position: relative; padding: 16px 18px 16px; margin-bottom: 18px; clip-path: var(--m-notch); background: rgba(16,29,51,.94); box-shadow: inset 0 0 0 3px rgba(77,227,255,.18), inset 0 -5px 0 rgba(0,0,0,.35); }

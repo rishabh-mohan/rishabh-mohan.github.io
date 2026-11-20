@@ -1,6 +1,6 @@
 // Mobile copy checked against public repository READMEs and local project READMEs, November 2026.
-// Public sources: github.com/rishabh-mohan/{brightspace-canvas-wrapper,d31,pack-studio,rr-scraper,hydrogen-bridge,gemini-api}.
-// Additional local sources: canvas-personal, gemini-api, purdue/purdue-course-request-planner.
+// Public sources: github.com/rishabh-mohan/{brightspace-canvas-wrapper,d31,pack-studio,rr-scraper,hydrogen-bridge,purdue-registration-planner}.
+// Additional local sources: canvas-personal, purdue/purdue-course-request-planner.
 // Shared introductions live in projects.js; these are mobile-only supporting details.
 // Order highlights by everyday usefulness, not implementation effort or release history.
 const mobileProjectDetails = {
@@ -32,7 +32,7 @@ const mobileProjectDetails = {
     stack: ['Python', 'Playwright', 'OpenCode', 'OpenAI-compatible API'],
     highlights: [
       'Ask a coding agent to read, explain and edit project files directly from OpenCode.',
-      'Choose among the models available through an existing Gemini Enterprise account, without a separate API key.',
+      'Choose among the models the organization’s Gemini Enterprise account offers, discovered at startup.',
       'Include screenshots or PDFs when a task needs more context than text alone.'
     ]
   }
@@ -42,12 +42,7 @@ const mobileAdditionalProjects = [
   {
     name: 'Purdue Course Request Planner',
     description: 'A Chrome extension prototype that helps Purdue students compare course requests before submitting them. It previews a weekly timetable beside UniTime and flags overlapping meetings; final assigned schedules may differ.',
-    links: []
-  },
-  {
-    name: 'gemini-api',
-    description: 'A JavaScript command-line experiment that sends prompts to Gemini Enterprise and returns responses through browser automation, bringing a browser-only service into scripts and terminal workflows.',
-    links: [['GitHub', 'https://github.com/rishabh-mohan/gemini-api']]
+    links: [['GitHub', 'https://github.com/rishabh-mohan/purdue-registration-planner']]
   }
 ];
 
@@ -56,11 +51,11 @@ const mobileBackground = {
   intro: 'I’m Rishabh, a computer science student at Purdue. I build tools for everyday tasks, from keeping up with coursework to reading offline. My experience also includes testing payment software and helping students learn math.',
   experience: [
     {
-      role: 'Technical Systems Analyst Intern', org: 'Ayris Global', dates: 'May 2024 – July 2026',
+      role: 'Technical Systems Analyst Intern', org: 'Ayris Global', dates: 'May 2024 – July 2026 (part-time; full-time summers)',
       bullets: [
-        'Tested payment acceptance workflows in Assure PAT, documenting reproducible edge cases and defects for the team.',
-        'Checked functionality and visual behavior to help identify problems before certification reviews.',
-        'Drafted a provisional patent document describing payment-testing workflows and helped present the platform to Discover’s certification teams.'
+        'Led a two-person team that drafted the provisional patent application for Assure PAT, making sure it accurately defined the test-card request and assignment workflows.',
+        'Ran functional and visual QA on Assure PAT, documenting reproducible edge cases and tracking defects through structured reports.',
+        'Helped present the platform to Discover’s certification, production and acceptance teams.'
       ]
     },
     {
@@ -73,8 +68,8 @@ const mobileBackground = {
   ],
   skills: [
     { name: 'Web tools & automation', description: 'Browser interfaces, everyday workflows and offline exports.', tools: ['JavaScript', 'HTML/CSS', 'Node.js', 'Playwright', 'Cheerio'] },
-    { name: 'Apps & interactive systems', description: 'Games, content editors and pathfinding.', tools: ['Java', 'Dart', 'Flutter', 'JSON'] },
-    { name: 'Testing & collaboration', description: 'Reproducing issues, checking behavior and communicating changes.', tools: ['Functional QA', 'Visual QA', 'Git', 'Python'] }
+    { name: 'Apps & interactive systems', description: 'Games, content editors and simulation engines.', tools: ['Java', 'Dart', 'Flutter', 'JSON'] },
+    { name: 'Testing & collaboration', description: 'Reproducing issues, checking behavior and communicating changes.', tools: ['Functional QA', 'Visual QA', 'Git', 'GitHub Actions', 'Python'] }
   ],
   education: [
     { school: 'Purdue University', qualification: 'B.S. in Computer Science', note: 'Expected May 2029 · accelerated degree plan' },

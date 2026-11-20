@@ -11,6 +11,6 @@
 <text xml:space="preserve" x="18" y="168" fill="#a6d6e6">gemini-4-hydrogen effort=high</text>
 <text xml:space="preserve" x="18" y="186" fill="#e0eaf2">upstream handed off to file_and_coding_agent</text>
 <text xml:space="preserve" x="18" y="204" fill="#a6d6e6">claude-opus-5-5 effort=medium</text>
-<text xml:space="preserve" x="18" y="222" fill="#ffd166">reply blocked by content filter; asking again (1/2)</text>
+<text xml:space="preserve" x="18" y="222" fill="#ffd166">client disconnected; cancelled queued request</text>
 <text xml:space="preserve" x="18" y="240" fill="#a6d6e6">claude-opus-5-5 effort=low</text>
 </svg>

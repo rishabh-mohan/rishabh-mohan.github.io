@@ -42,9 +42,9 @@ const sectionImages = {
   },
   'Gemini Bridge': {
     1: ['gemini-bridge-launch.svg', 'Terminal: hydrogen-manual starting the bridge and OpenCode, and -BridgeOnly printing the base URL', 760, 224],
-    2: ['gemini-bridge-gap.svg', 'Diagram: Gemini Enterprise works in the browser, OpenCode needs an API with no key issued, and Gemini Bridge connects them locally', 720, 400],
-    3: ['gemini-bridge-log.svg', 'Bridge log: sign-in, model discovery, requests with effort levels, an upload, a hand-off and a content-filter re-ask', 760, 260],
-    4: ['gemini-bridge-reliability.svg', 'Reliability facts: one browser call at a time, 600 and 1,200 second timeouts, two content-filter re-asks, sign-in only on a real 401', 720, 400]
+    2: ['gemini-bridge-gap.svg', 'Diagram: Gemini Enterprise works in the browser, OpenCode expects an OpenAI-style API, and Gemini Bridge connects them locally', 720, 400],
+    3: ['gemini-bridge-log.svg', 'Bridge log: sign-in, model discovery, requests with effort levels, an upload, a hand-off and a request cancelled after a disconnect', 760, 260],
+    4: ['gemini-bridge-reliability.svg', 'Reliability facts: one browser call at a time, 600 and 1,200 second timeouts, 30 tests in CI without an account, sign-in only on a real 401', 720, 400]
   },
   // Each section of this window is a project, so it shows that project's picture.
   'Currently Working On': {
@@ -127,7 +127,7 @@ const desktopBlocks = {
   'd31 + Pack Studio': [
     // Intro
     [
-      ['stats', [['0', 'lines of game content in the engine'], ['~490', 'automated tests'], ['200', 'seeded full runs that must finish'], ['~60', 'effect verbs for events']]],
+      ['stats', [['0', 'lines of game content in the engine'], ['531', 'automated tests'], ['200', 'seeded full runs that must finish'], ['57', 'effect verbs for events']]],
       ['p', 'Change the pack and you change the game. The calendar, places, actions, events, items, traits, characters, colleges and every tuning number are JSON files. Pack Studio is the Android app that edits those files through forms.'],
       ['tags', ['Dart', 'Flutter', 'JSON', 'Android', 'Windows', 'MIT (engine)']]
     ],
@@ -145,7 +145,7 @@ const desktopBlocks = {
     // Inspiration
     [
       ['p', 'Korean Student Simulator’s 31-Day Mode has no way to add your own content. d31 rebuilds it as an engine that only knows rules, so a new campaign can be written as data.'],
-      ['h', 'Clean-room rules I kept to'],
+      ['h', 'Ground rules I kept to'],
       ['list', [
         'All engine code is original.',
         'No text, art, audio or data from the original game is in either repository.',
@@ -177,7 +177,7 @@ const desktopBlocks = {
     ],
     // Check It Out
     [
-      ['code', 'flutter pub get\nflutter test                 # ~490 tests, 200 seeded full runs\nflutter run -d windows       # fastest loop\nflutter build apk --profile  # Android', 'Build d31'],
+      ['code', 'flutter pub get\nflutter test                 # 531 tests, 200 seeded full runs\nflutter run -d windows       # fastest loop\nflutter build apk --profile  # Android', 'Build d31'],
       ['p', 'Pack Studio and the game share a packs folder on Android, so a pack made on the phone shows up in the game after a restart.']
     ]
   ],
@@ -209,17 +209,17 @@ const desktopBlocks = {
       ['p', 'Royal Road serials run to hundreds of chapters, each on its own web page. Reading one offline, or on an e-reader, means collecting every chapter into a single file.'],
       ['h', 'What made it harder than it looks'],
       ['list', [
-        'Royal Road injects hidden anti-piracy paragraphs. A plain HTML parser copies them into the book.',
-        'Search results hide ratings in tooltips and split chapter counts across elements.',
-        'Some pages ask for a manual access check.'
+        'A long serial means hundreds of page loads, and any one of them can time out or come back empty.',
+        'A book saved with a missing chapter is worse than no book, so partial output can’t be allowed.',
+        'Two stories can share a title, and Windows rejects some filenames outright.'
       ]]
     ],
     // Implementation
     [
-      ['code', '// Read paragraphs in the browser, so CSS-hidden ones are skipped.\nconst paragraphs = await page.$$eval(\n  \'.chapter-inner.chapter-content p\', ps => ps\n    .filter(p => {\n      const s = getComputedStyle(p);\n      return s.display !== \'none\' && s.visibility !== \'hidden\';\n    })\n    .map(p => p.innerText.trim())\n    .filter(Boolean));', 'src/royal-road.js: the hidden-paragraph filter'],
+      ['code', '// Write to "<file>.part" then rename, so an interrupted run never leaves a\n// half-written file that the resume check would mistake for a finished one.\nasync function writeAtomic(format, chapters, meta, filePath) {\n  const tmp = `${filePath}.part`;\n  try {\n    await format.write(chapters, meta, tmp);\n    fs.renameSync(tmp, filePath);\n  } catch (err) {\n    fs.rmSync(tmp, { force: true });\n    throw err;\n  }\n}', 'src/writers/index.js: the shared atomic write'],
       ['list', [
         'Search and metadata are parsed with Cheerio. Chapters are read with headless Chromium through Playwright.',
-        'Images and fonts are blocked to save bandwidth. Stylesheets aren’t, because the hidden-paragraph check depends on them.',
+        'Images and fonts are blocked to save bandwidth, so each chapter loads only what the text needs.',
         'Writers for TXT, PDF and EPUB share one atomic-write path through temporary .part files.',
         'The launcher installs pinned dependencies and Chromium on first run.'
       ]]
@@ -244,7 +244,7 @@ const desktopBlocks = {
   'Gemini Bridge': [
     // Intro
     [
-      ['stats', [['0', 'API keys or stored passwords'], ['10+', 'models, discovered at startup'], ['1', 'command to launch']]],
+      ['stats', [['30', 'tests, run in CI without an account'], ['10+', 'models, discovered at startup'], ['1', 'command to launch']]],
       ['list', [
         'Gemini 4, 3.x Flash and Pro models, plus Claude Opus and Sonnet, whichever the organisation offers.',
         'Low, medium and high effort as OpenCode variants.',
@@ -261,8 +261,7 @@ const desktopBlocks = {
     ],
     // Inspiration
     [
-      ['p', 'Purdue gives students Gemini Enterprise in the browser, including strong coding models, but no API key. Terminal coding agents need an API. The bridge closes that gap with the access students already have.'],
-      ['p', 'An earlier experiment, gemini-api, sent one prompt and scraped the reply. The bridge goes further: a full server that coding tools can talk to.']
+      ['p', 'Purdue gives students Gemini Enterprise in the browser, including strong coding models, but terminal coding agents expect an OpenAI-style API. The bridge connects the two using the access and sign-in students already have.']
     ],
     // Implementation
     [
@@ -283,8 +282,7 @@ const desktopBlocks = {
         'Browser calls run one at a time, so a sign-in can never interrupt another request.',
         'Disconnecting cancels queued work, stops retries and aborts the active fetch.',
         'Timeouts per fetch (600 s) and per request (1,200 s), with keepalives while streaming.',
-        'Errors carry a type, a retryable hint and the upstream status. Only a real 401 triggers sign-in.',
-        'If the organisation’s content filter blocks a reply, it asks again twice, then retries with less history.'
+        'Errors carry a type, a retryable hint and the upstream status. Only a real 401 triggers sign-in.'
       ]]
     ],
     // Check It Out
@@ -309,7 +307,7 @@ const desktopBlocks = {
     ],
     // Gemini Bridge
     [
-      ['list', ['Working: model discovery, tool use, attachments, cancellation and content-filter retries.', 'Known limit: Google doesn’t report token usage, so counts are estimates.']]
+      ['list', ['Working: model discovery, tool use, attachments, cancellation and CI tests.', 'Known limit: Google doesn’t report token usage, so counts are estimates.']]
     ],
     // Brightspace Wrapper
     [
@@ -317,7 +315,7 @@ const desktopBlocks = {
     ],
     // Pack Studio
     [
-      ['list', ['Working: forms for every content type, an event builder and colour schemes.', 'Not yet: no licence has been chosen.']]
+      ['list', ['Working: forms for every content type, an event builder and colour schemes.', 'Released under the MIT License.']]
     ]
   ]
 };

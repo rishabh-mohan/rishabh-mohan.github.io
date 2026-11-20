@@ -66,8 +66,10 @@ const posts = [];
     el('p', { className: 'org', textContent: entry.qualification }),
     el('p', { className: 'body', textContent: entry.note })));
   // "Name (what it is), ..." -> a list with the description dimmed.
+  // Skip the projects already shown as cards above.
+  const featured = new Set(projects.slice(0, 4).map(project => project.name));
   const builds = resume[3].replace(/\.$/, '').split(/, (?:and )?/)
-    .filter(item => !/^(?:d31|rr-scraper) \(/.test(item)).map(item => {
+    .filter(item => !featured.has(item.replace(/ \(.*\)$/, ''))).map(item => {
     const [, name, what] = /^(.+?) \((.+)\)$/.exec(item) || [, item, ''];
     return el('li', {}, el('span', { className: 'role', textContent: name }), what ? el('span', { className: 'org', textContent: ` ${what}` }) : '');
   });

@@ -26,7 +26,7 @@ const projects = [
     tagline: 'Balance study, work and rest, then create your own campaigns with Pack Studio.',
     detail: [
       'A playable life-sim prototype where daily choices shape a character’s progress. Manage time, money and stamina, prepare for exams, and explore branching stories. Pack Studio lets you create your own campaigns on Android.',
-      'd31 is a clean-room rebuild of Korean Student Simulator’s 31-Day Mode. Play the original game to see what it recreates.',
+      'd31 is an independent reimplementation of Korean Student Simulator’s 31-Day Mode. Play the original game to see what it recreates.',
       'Rebuilt from 31-Day Mode, the simulation balances study, work and rest against time, money and stamina. Branching encounters respond to choices and game state.',
       'Pack Studio lets creators edit characters, places, items and story choices through forms. The Flutter game reads those campaigns from JSON content packs.',
       'Creators can start from an example campaign, add artwork and colors, and build a new scenario without changing engine code.',
@@ -45,7 +45,7 @@ const projects = [
   {
     name: 'rr-scraper',
     icon: 'rr-scraper-icon.svg',
-    tagline: 'A CLI that saves Royal Road stories as TXT, PDF, or EPUB.',
+    tagline: 'A CLI for reading serialized fiction offline as TXT, PDF, or EPUB.',
     detail: [
       'A terminal tool for taking Royal Road stories offline. Search by title or paste a story link, then export a book in the format that suits your reader.',
       'How to use it: run one command, answer four prompts, and the finished book lands in its own folder.',
@@ -69,11 +69,11 @@ const projects = [
     name: 'Gemini Bridge',
     icon: 'gemini-bridge-icon.svg',
     image: ['gemini-bridge-diagram.svg', 'OpenCode sends coding requests through a local Gemini Bridge to a signed-in Gemini Enterprise browser session; responses return to OpenCode.', 720, 400],
-    tagline: 'Use a Gemini Enterprise web account as a terminal coding agent, no API key needed.',
+    tagline: 'A local OpenAI-compatible server that lets OpenCode use an organization’s Gemini Enterprise models.',
     detail: [
-      'A bridge from browser-based Gemini Enterprise accounts to terminal coding tools. Built to make Purdue’s existing AI access usable in a coding workflow without a separate API key.',
+      'A local server that connects terminal coding tools to Gemini Enterprise through the user’s own browser sign-in. Built to make Purdue’s existing AI access usable in a coding workflow.',
       'Point OpenCode at the bridge, pick a model with /models, and it reads and edits files like any coding agent.',
-      'Purdue offers Gemini Enterprise in the browser, but students don’t get an API key to use it from coding tools.',
+      'Purdue offers Gemini Enterprise to students in the browser, but terminal coding agents expect an API. The bridge connects the two using the access students already have.',
       'A Python bridge connects OpenCode to a signed-in Gemini Enterprise browser. Choose an available model and include screenshots or PDFs alongside requests to read, explain or edit project files.',
       'Developers can use their organization’s available models inside OpenCode with the normal sign-in flow. This is an independent project, not an official Google integration.',
       'Find the setup steps, supported models, and launcher on GitHub.'
@@ -89,7 +89,7 @@ const projects = [
       'This portfolio: six windows you can rearrange, framed by ASCII scenery that changes theme on every shuffle.',
       'A life-sim where players balance study, work and rest, prepare for exams and explore branching stories.',
       'Take Royal Road stories offline as TXT, PDF or EPUB, with chapter grouping and recovery from interrupted downloads.',
-      'Use an existing Gemini Enterprise account to read, explain and edit code in OpenCode, without a separate API key.',
+      'Connect OpenCode to an organization’s Gemini Enterprise models through a local OpenAI-compatible server.',
       'A Chrome and Firefox extension that brings courses, deadlines and what-if grades together, with optional Gradescope and Ed Discussion integrations.',
       'Create d31 campaigns on Android by editing characters, places, items and story choices through forms. Find all of these on GitHub.'
     ],
@@ -102,10 +102,10 @@ const projects = [
     tagline: 'Purdue CS student, payment-systems analyst intern, and lead math tutor.',
     sections: ['Skills', 'Experience', 'Academics', 'Projects', 'Tutoring', 'Full Resume'],
     detail: [
-      'Languages: JavaScript, Java, HTML/CSS, SQL (PostgreSQL), R, Python, Dart. Frameworks: Node.js, Playwright, Cheerio, PDFKit, JSZip, Flutter. Tools: Git, LaTeX, JSON, ADB, Regex, Linux.',
-      'Technical Systems Analyst Intern at Ayris Global (May 2024 – July 2026): drafted a provisional patent for the Assure PAT payment-testing platform, ran functional and visual QA, and helped present it to Discover’s certification teams.',
+      'Languages: Java, JavaScript, Dart, Python, HTML/CSS. Frameworks: Node.js, Flutter, Playwright, FastAPI, Cheerio, PDFKit, JSZip. Tools: Git, GitHub Actions, WebExtensions, JSON, ADB, Regex. Familiar: SQL (basic joins), R, LaTeX.',
+      'Technical Systems Analyst Intern at Ayris Global (May 2024 – July 2026, part-time; full-time summers): led a two-person team that drafted the provisional patent application for the Assure PAT payment-testing platform, ran functional and visual QA, and helped present it to Discover’s certification teams.',
       'B.S. in Computer Science at Purdue University, expected May 2029. Adlai E. Stevenson High School, Highest Honors, 4.25 weighted GPA.',
-      'd31 (Flutter simulation engine), rr-scraper (Node.js exporter), Modular Maze Solver (Java pathfinding), and two TTRPG campaign engines built in Google Sheets.',
+      'Brightspace Canvas Wrapper (Chrome and Firefox extension), d31 + Pack Studio (Flutter simulation engine and editor), rr-scraper (Node.js offline-reading exporter), and Gemini Bridge (Python OpenAI-compatible server).',
       'Lead Math Tutor at Eye Level Learning Center (Nov 2024 – Aug 2026): tutored 200+ students from pre-K through trigonometry and redesigned a grading workflow most tutors adopted.',
       'Download the full one-page resume as a PDF, or find me on LinkedIn and GitHub.'
     ],
