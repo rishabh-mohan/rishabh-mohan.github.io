@@ -47,6 +47,16 @@ function linkBanner(project) {
 
 function projectVisual(project, section, lazy = false) {
   if (section === 5 && project.links) return linkBanner(project);
+  if (project.gallery) {
+    const frame = node('figure', '', 'visual screenshot-strip');
+    project.gallery.forEach(([file, alt, width, height]) => {
+      const image = node('img');
+      image.src = 'assets/' + file; image.alt = alt; image.width = width; image.height = height;
+      image.decoding = 'async'; if (lazy) image.loading = 'lazy';
+      frame.append(image);
+    });
+    return frame;
+  }
   const asset = (section === 3 && project.extra) || project.image;
   if (!asset) {
     // Announce the diagram as one image instead of reading its punctuation aloud.

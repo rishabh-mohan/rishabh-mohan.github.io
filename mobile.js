@@ -14,9 +14,12 @@ const posts = [];
     const more = mobileProjectDetails[project.name];
     const card = el('article', { className: 'project' },
       el('p', { className: 'kicker', textContent: `PROJECT ${String(i + 1).padStart(2, '0')}` }),
-      el('h3', { textContent: project.name }),
+      el('h3', { className: 'project-heading' }, ...[].concat(project.icon || []).map(icon => el('img', { className: 'project-icon', src: 'assets/' + icon, alt: '', width: 36, height: 36 })), el('span', { textContent: project.name })),
       el('p', { className: 'tag', textContent: project.tagline }));
-    if (project.image) {
+    if (project.gallery) {
+      card.append(el('figure', { className: 'media screenshot-strip' }, ...project.gallery.map(([file, alt, width, height]) =>
+        el('a', { href: 'assets/' + file, ariaLabel: 'Open full screenshot: ' + alt }, el('img', { src: 'assets/' + file, alt, width, height, loading: 'lazy' })))));
+    } else if (project.image) {
       const [file, alt, width, height] = project.image;
       card.append(el('figure', { className: 'media' }, el('img', { src: 'assets/' + file, alt, width, height, loading: 'lazy' })));
     } else if (project.art) {

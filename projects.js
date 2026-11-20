@@ -5,6 +5,7 @@ const labelsFor = project => project.sections || sections;
 const projects = [
   {
     name: 'Brightspace Canvas Wrapper',
+    icon: 'brightspace-icon.png',
     tagline: 'A Chrome and Firefox extension that gives Brightspace a Canvas-style dashboard.',
     detail: [
       'A browser extension that brings courses, deadlines and grades into one Canvas-style dashboard for Brightspace students. Available for Chrome and Firefox.',
@@ -20,6 +21,7 @@ const projects = [
   },
   {
     name: 'd31 + Pack Studio',
+    icon: ['d31-icon.png', 'pack-studio-icon.png'],
     tagline: 'Balance study, work and rest, then create your own campaigns with Pack Studio.',
     detail: [
       'A playable life-sim prototype where daily choices shape a character’s progress. Manage time, money and stamina, prepare for exams, and explore branching stories. Pack Studio lets you create your own campaigns on Android.',
@@ -31,11 +33,17 @@ const projects = [
     ],
     image: ['d31-gameplay.webp', 'd31 gameplay showing the schedule and activity choices', 466, 960],
     extra: ['pack-studio-screenshot.webp', 'Pack Studio showing its pack tools', 457, 960],
+    gallery: [
+      ['d31-gameplay.webp', 'd31: schedule and activity choices', 466, 960],
+      ['pack-studio-screenshot.webp', 'Pack Studio: create or open a content pack', 457, 960],
+      ['pack-studio-editor.webp', 'Pack Studio: edit locations, traits, characters, books and items', 1080, 2400]
+    ],
     demo: 'd31',
     links: [['d31 on GitHub', 'https://github.com/rishabh-mohan/d31'], ['Pack Studio on GitHub', 'https://github.com/rishabh-mohan/pack-studio']]
   },
   {
     name: 'rr-scraper',
+    icon: 'rr-scraper-icon.svg',
     tagline: 'A CLI that saves Royal Road stories as TXT, PDF, or EPUB.',
     detail: [
       'A terminal tool for taking Royal Road stories offline. Search by title or paste a story link, then export a book in the format that suits your reader.',
@@ -52,6 +60,7 @@ const projects = [
   },
   {
     name: 'Gemini Bridge',
+    image: ['gemini-bridge-diagram.svg', 'OpenCode sends coding requests through a local Gemini Bridge to a signed-in Gemini Enterprise browser session; responses return to OpenCode.', 720, 400],
     tagline: 'Use a Gemini Enterprise web account as a terminal coding agent, no API key needed.',
     detail: [
       'A bridge from browser-based Gemini Enterprise accounts to terminal coding tools. Built to make Purdue’s existing AI access usable in a coding workflow without a separate API key.',
@@ -61,8 +70,6 @@ const projects = [
       'Developers can use their organization’s available models inside OpenCode with the normal sign-in flow. This is an independent project, not an official Google integration.',
       'Find the setup steps, supported models, and launcher on GitHub.'
     ],
-    art: 'local client\n    |\n    v\n[ bridge.py ]  --->  Gemini',
-    artAlt: 'Diagram: a local client sends requests to bridge.py, which relays them to Gemini',
     links: [['hydrogen-bridge on GitHub', 'https://github.com/rishabh-mohan/hydrogen-bridge']]
   },
   {
