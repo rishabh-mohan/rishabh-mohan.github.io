@@ -340,7 +340,8 @@
 
     // Far kelp behind the rock, then the pre-rendered rock.
     kelp.forEach(k => k.far && drawKelp(k));
-    if (rockTop - cam < h && rockTop + rockHeight - cam > 0) ctx.drawImage(rockLayer, 0, rockTop - cam, w, rockHeight);
+    // The rock layer is 0px wide while #mobile is hidden (desktop), and drawImage throws on an empty canvas.
+    if (rockLayer.width && rockLayer.height && rockTop - cam < h && rockTop + rockHeight - cam > 0) ctx.drawImage(rockLayer, 0, rockTop - cam, w, rockHeight);
 
     coral.forEach(drawCoral);
     kelp.forEach(k => k.far || drawKelp(k));

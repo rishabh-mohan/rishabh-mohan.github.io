@@ -57,7 +57,8 @@ function projectVisual(project, section, lazy = false) {
     });
     return frame;
   }
-  const asset = (section === 3 && project.extra) || project.image;
+  const desktopImage = typeof desktopImages !== 'undefined' && desktopImages[project.name];
+  const asset = (section === 3 && project.extra) || desktopImage || project.image;
   if (!asset) {
     // Announce the diagram as one image instead of reading its punctuation aloud.
     const art = node('pre', project.art, 'art');
@@ -77,6 +78,52 @@ function projectVisual(project, section, lazy = false) {
   return frame;
 }
 
+// Extra depth per section from desktop-content.js: text, figures, lists, steps, stats and code.
+function renderBlock([type, ...rest], lazy) {
+  if (type === 'p') return node('p', rest[0]);
+  if (type === 'h') return node('h4', rest[0], 'block-h');
+  if (type === 'img') {
+    const [file, alt, width, height, caption] = rest;
+    const figure = node('figure', '', 'block-fig');
+    const image = node('img');
+    image.src = 'assets/' + file; image.alt = alt; image.width = width; image.height = height;
+    image.decoding = 'async'; if (lazy) image.loading = 'lazy';
+    figure.append(image);
+    if (caption) figure.append(node('figcaption', caption));
+    return figure;
+  }
+  if (type === 'list' || type === 'tags') {
+    const list = node('ul', '', type === 'tags' ? 'block-tags' : 'block-list');
+    rest[0].forEach(text => list.append(node('li', text)));
+    return list;
+  }
+  if (type === 'steps') {
+    const list = node('ol', '', 'block-steps');
+    rest[0].forEach(([title, text]) => { const item = node('li'); item.append(node('b', title), ' ' + text); list.append(item); });
+    return list;
+  }
+  if (type === 'stats') {
+    const list = node('ul', '', 'block-stats');
+    rest[0].forEach(([value, label]) => { const item = node('li'); item.append(node('b', value), node('span', label)); list.append(item); });
+    return list;
+  }
+  if (type === 'code') {
+    const figure = node('figure', '', 'block-code');
+    if (rest[1]) figure.append(node('figcaption', rest[1]));
+    figure.append(node('pre', rest[0]));
+    return figure;
+  }
+  return null;
+}
+
+function sectionBlocks(project, section, lazy = false) {
+  const list = (typeof desktopBlocks !== 'undefined' && desktopBlocks[project.name]?.[section]) || [];
+  if (!list.length) return null;
+  const wrap = node('div', '', 'blocks');
+  list.forEach(block => { const element = renderBlock(block, lazy); if (element) wrap.append(element); });
+  return wrap;
+}
+
 function paintCard(slot) {
   const card = grid.children[slot];
   const project = projects[order[slot]];
@@ -89,6 +136,8 @@ function paintCard(slot) {
   const details = preview.querySelector('.preview-details');
   details.replaceChildren(projectVisual(project, slot));
   appendSectionExtras(details, project, slot);
+  const blocks = sectionBlocks(project, slot, true);
+  if (blocks) details.append(blocks);
   preview.scrollTo({ top: 0, behavior: 'instant' });
 }
 
@@ -380,6 +429,8 @@ function openProject(slot, pushHistory = true) {
       part.append(projectVisual(project, index, index !== slot));
     }
     appendSectionExtras(part, project, index);
+    const blocks = sectionBlocks(project, index, index !== slot);
+    if (blocks) part.append(blocks);
     content.append(part);
   });
   expanded.hidden = false;
