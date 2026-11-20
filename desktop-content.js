@@ -40,8 +40,7 @@ const desktopBlocks = {
       ['list', [
         'CS 25100 \u2192 Grades: type a what-if score and watch the total change. The lowest quiz is dropped.',
         'CS 25100 \u2192 Assignments: Gradescope and Ed work is merged in, with duplicates folded into one item.',
-        'Dashboard \u22ee \u2192 Tasks Panel, or press ? for keyboard shortcuts.',
-        'Purdue extras (dining menus, BoilerClasses, class times) need live services, so they don\u2019t work in the demo.'
+        'Dashboard \u22ee \u2192 Tasks Panel, or press ? for keyboard shortcuts.'
       ]]
     ],
     // Inspiration
@@ -75,13 +74,6 @@ const desktopBlocks = {
         'Drop rules are applied, with dropped scores struck through. Locked items say why they can\u2019t be changed.',
         '\u201cCalculate based only on graded assignments\u201d and \u201cCount items marked not counted\u201d match how instructors set up the gradebook.',
         'Gradescope scores fill in where Brightspace hasn\u2019t posted one yet.'
-      ]],
-      ['h', 'Purdue extras'],
-      ['list', [
-        'Dining menus for every dining court, with a food filter (beef also blocks steak and burgers) and favourites.',
-        'Past grade distributions and average GPA per instructor from BoilerClasses, with a rough percentile for your current total.',
-        'Upcoming exam dates and rooms from BoilerExams, also shown on the calendar.',
-        'Class times from purdue.io: where your lecture, lab and PSO meet, with room map links.'
       ]],
       ['img', 'brightspace-calendar.webp', 'Month calendar with assignments and exams coloured by course', 1200, 750, 'Calendar with a checkbox per course and your own To Do items. ' + sampleData]
     ],
@@ -280,7 +272,7 @@ const desktopBlocks = {
     ],
     // Brightspace Wrapper
     [
-      ['list', ['Working: dashboard, courses, grades, calendar, Gradescope, Ed and Purdue extras.', 'Next: Ed scores, once it’s confirmed where Ed stores them.']]
+      ['list', ['Working: dashboard, courses, grades, calendar, Gradescope and Ed.', 'Next: Ed scores, once it’s confirmed where Ed stores them.']]
     ],
     // Pack Studio
     [

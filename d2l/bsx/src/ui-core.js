@@ -211,14 +211,11 @@ BSX.ui = (() => {
   // todos: the student's own planner items. done / dismissed: keys of items ticked off or hidden.
   // ed: the Ed Discussion reader (on, token, region, map of Ed course -> Brightspace course).
   // links: outside items the student folded into another item, or kept 'separate'.
-  const settings = { theme: 'auto', courses: {}, dash: 'cards', navOpen: true, calHidden: [], asgBy: 'date', todos: [], done: {}, dismissed: {}, ed: { on: false, token: '', region: 'us', map: {} }, links: {}, menus: { court: null, block: [], mainsOnly: false, fav: [] }, sections: {}, calClasses: false };
+  const settings = { theme: 'auto', courses: {}, dash: 'cards', navOpen: true, calHidden: [], asgBy: 'date', todos: [], done: {}, dismissed: {}, ed: { on: false, token: '', region: 'us', map: {} }, links: {} };
   async function loadSettings() {
     try {
       const saved = (await store.get('bsx'))?.bsx;
-      if (!saved) {
-        await loadSynced(); // a new install can still have favourites from another browser
-        return;
-      }
+      if (!saved) return;
       if (THEMES.includes(saved.theme)) settings.theme = saved.theme;
       if (saved.courses && typeof saved.courses === 'object') settings.courses = { ...saved.courses };
       if (['cards', 'list', 'activity'].includes(saved.dash)) settings.dash = saved.dash;
@@ -243,64 +240,9 @@ BSX.ui = (() => {
       if (typeof saved.threeDay === 'boolean') settings.threeDay = saved.threeDay;
       if ([0, 5, 10].includes(saved.taskLimit)) settings.taskLimit = saved.taskLimit;
       if (typeof saved.clock24 === 'boolean') settings.clock24 = saved.clock24;
-      // sections: the purdue.io sections (CRNs) picked for each course. calClasses: class times on the calendar.
-      if (saved.sections && typeof saved.sections === 'object') settings.sections = Object.fromEntries(Object.entries(saved.sections).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [k, v.map(String)]));
-      if (typeof saved.calClasses === 'boolean') settings.calClasses = saved.calClasses;
-      if (typeof saved.dashExams === 'boolean') settings.dashExams = saved.dashExams;
-      if (saved.menus && typeof saved.menus === 'object') settings.menus = { court: typeof saved.menus.court === 'string' ? saved.menus.court : null, block: Array.isArray(saved.menus.block) ? saved.menus.block.filter((t) => typeof t === 'string') : [], mainsOnly: Boolean(saved.menus.mainsOnly), fav: Array.isArray(saved.menus.fav) ? saved.menus.fav.filter((t) => typeof t === 'string') : [] };
     } catch {}
-    await loadSynced();
     applyClock();
   }
-
-  // ---- synced preferences ------------------------------------------------------
-  // Menu favourites and the food filter follow the student between browsers through the
-  // browser's own sync (Firefox Sync, or Chrome's), each as its own entry, as sync allows 8 KB per
-  // entry. Without sync turned on they just stay on this computer. The rest stays local.
-  const sync = (globalThis.browser || globalThis.chrome)?.storage?.sync;
-  const SYNCED = { bsxFav: 'fav', bsxBlock: 'block' };
-  const lastSynced = {};
-  const strings = (v) => (Array.isArray(v) ? v.filter((t) => typeof t === 'string') : null);
-  async function loadSynced() {
-    if (!sync) return;
-    try {
-      const got = await sync.get(Object.keys(SYNCED));
-      for (const [key, field] of Object.entries(SYNCED)) {
-        const list = strings(got[key]);
-        if (list) {
-          settings.menus[field] = list;
-          lastSynced[key] = JSON.stringify(list);
-        }
-      }
-      pushSynced(); // the first time, what this computer already had goes up
-    } catch {}
-  }
-  // Writes only what changed, so ordinary saves (a theme, a pinned item) cost no sync writes.
-  function pushSynced() {
-    if (!sync) return;
-    const out = {};
-    for (const [key, field] of Object.entries(SYNCED)) {
-      const json = JSON.stringify(settings.menus[field]);
-      if (lastSynced[key] !== json) out[key] = settings.menus[field];
-    }
-    if (!Object.keys(out).length) return;
-    sync.set(out)
-      .then(() => { for (const key of Object.keys(out)) lastSynced[key] = JSON.stringify(out[key]); })
-      .catch((e) => flash(`Couldn’t sync your menu favorites and food filter: ${e.message || e}`, 'bad'));
-  }
-  // Another browser changed them: use its lists and redraw.
-  (globalThis.browser || globalThis.chrome)?.storage?.onChanged?.addListener((changes, area) => {
-    if (area !== 'sync') return;
-    let changed = false;
-    for (const [key, field] of Object.entries(SYNCED)) {
-      const list = changes[key] && strings(changes[key].newValue);
-      if (!list || JSON.stringify(list) === JSON.stringify(settings.menus[field])) continue;
-      settings.menus[field] = list;
-      lastSynced[key] = JSON.stringify(list);
-      changed = true;
-    }
-    if (changed && frame && route().view === 'menus') render();
-  });
   // Times follow the browser's own 12/24-hour habit unless the student asks for 24-hour.
   // The formats are changed in place so every page that holds `fmt` sees the new clock.
   function applyClock() {
@@ -312,7 +254,6 @@ BSX.ui = (() => {
     try {
       store.set({ bsx: settings });
     } catch {}
-    pushSynced();
   }
   const colorOf = (id) => {
     const chosen = settings.courses[id]?.color;
@@ -648,15 +589,7 @@ BSX.ui = (() => {
       if (/^\/d2l\//.test(u) && !/^\/d2l\/api\//i.test(u)) return { view: 'open', nav: null, u };
       return { view: 'dashboard', nav: 'dashboard' };
     }
-    let m = hash.match(/^#\/menus(?:\/([^/]+))?(?:\/(\d{4}-\d{2}-\d{2}))?$/);
-    if (m) {
-      let court = null;
-      try {
-        court = m[1] ? decodeURIComponent(m[1]) : null;
-      } catch {}
-      return { view: 'menus', nav: 'menus', court, date: m[2] || null };
-    }
-    m = hash.match(/^#\/calendar(?:\/(\d{4})-(\d{2}))?$/);
+    let m = hash.match(/^#\/calendar(?:\/(\d{4})-(\d{2}))?$/);
     if (m) return { view: 'calendar', nav: 'calendar', year: m[1] ? Number(m[1]) : null, month: m[2] ? Number(m[2]) - 1 : null };
     m = hash.match(/^#\/courses\/(\d+)(?:\/([a-z]+)(?:\/(\d+))?)?$/);
     if (m && (!m[2] || SECTIONS.includes(m[2]))) return { view: 'course', nav: 'courses', courseId: Number(m[1]), section: m[2] || 'home', itemId: m[3] ? Number(m[3]) : null };
@@ -852,7 +785,6 @@ BSX.ui = (() => {
       trayBtn('courses', 'courses', 'Courses'),
       item('groups', '#/groups', 'groups', 'Groups'),
       item('calendar', '#/calendar', 'calendar', 'Calendar'),
-      item('menus', '#/menus', 'food', 'Menus'),
       item('inbox', '#/inbox', 'inbox', 'Inbox'),
       trayBtn('help', 'help', 'Help'),
       h('span', { class: 'gap' }),
@@ -1078,12 +1010,10 @@ BSX.ui = (() => {
     ['g then d', 'Dashboard'],
     ['g then c', 'All courses'],
     ['g then l', 'Calendar'],
-    ['g then m', 'Menus'],
     ['g then i', 'Inbox'],
     ['g then g', 'Grades for all courses'],
     ['g then p', 'Groups'],
     ['s', 'Search all courses'],
-    ['Shift+S', 'Deep search: all courses by instructions, feedback, posts and people; menus six weeks back, by ingredient'],
     ['/', 'Search this page'],
     ['j / k', 'Next / previous item'],
     ['[ / ]', 'Previous / next module item'],
@@ -1101,7 +1031,7 @@ BSX.ui = (() => {
     overlay.querySelector('.iconbtn').focus();
   }
 
-  const GO = { d: '#/', c: '#/courses', l: '#/calendar', m: '#/menus', i: '#/inbox', g: '#/grades', p: '#/groups' };
+  const GO = { d: '#/', c: '#/courses', l: '#/calendar', i: '#/inbox', g: '#/grades', p: '#/groups' };
   let pendingG = 0;
   function onKey(ev) {
     if (!frame || ev.ctrlKey || ev.metaKey || ev.altKey || route().view === 'off') return;
@@ -1118,7 +1048,6 @@ BSX.ui = (() => {
     if (k === 'g') pendingG = Date.now();
     else if (k === '?') shortcutsDialog();
     else if (k === 's' && BSX.ui.searchDialog) BSX.ui.searchDialog();
-    else if (k === 'S' && BSX.ui.searchDialog) BSX.ui.searchDialog({ deep: true });
     else if (k === 'r') reload();
     else if (k === '/') {
       const box = frame.main.querySelector('input.search');

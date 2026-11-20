@@ -13,17 +13,6 @@
   const titleOf = (i, courses) => ui.itemLink(i, courses);
   const tint = (id) => (id == null ? 'var(--muted)' : colorOf(id));
 
-  // An exam on the to-do list ("Midterm 2") in a course BoilerExams covers gets a link to practise
-  // on its past exams.
-  function practiceLink(i, courses) {
-    const B = BSX.boiler;
-    const course = B && i.course_id != null && B.isExam(i.name || i.title) ? (courses || []).find((c) => c.id === i.course_id) : null;
-    if (!course) return null;
-    const box = h('div', { class: 'm' });
-    B.examsFor(course).then((e) => e && box.replaceChildren(h('a', { href: e.url, target: '_blank', rel: 'noopener noreferrer' }, 'Practice on BoilerExams ', ic('external', 12)))).catch(() => {});
-    return box;
-  }
-
   function todoRow(i, courseLabel, late, courses) {
     const points = i.points_possible != null ? `${num(i.points_possible)} points · ` : '';
     return h('div', { class: 'todo' },
@@ -31,88 +20,8 @@
       h('div', { class: 'tmid' },
         titleOf(i, courses),
         courseLabel ? h('div', { class: 'ctx', style: `--c:${tint(i.course_id)}` }, courseLabel) : null,
-        h('div', { class: late ? 'm bad' : 'm' }, late ? `Overdue · was due ${when(i.due_at)}` : `${points}${when(i.due_at)}`),
-        practiceLink(i, courses)),
+        h('div', { class: late ? 'm bad' : 'm' }, late ? `Overdue · was due ${when(i.due_at)}` : `${points}${when(i.due_at)}`)),
       h('button', { class: 'iconbtn xs', type: 'button', title: 'Dismiss', 'aria-label': `Dismiss ${i.name || i.title}`, onclick: () => ui.setFlag('dismissed', i, true) }, ic('close', 14)));
-  }
-
-  // Upcoming exams in the next four weeks, with their rooms, from BoilerExams (which lists exam
-  // dates for the courses it covers), each with a link to practise on past exams. Nothing shows
-  // when none of the courses has one coming up.
-  // Today's classes from purdue.io, for the sections picked on each course's Home (or the
-  // lecture found from its instructor): time, room, and which is on now or next. Nothing shows
-  // on a day without classes.
-  // "25 min", "2 hr 5 min".
-  const until = (ms) => {
-    const mins = Math.max(1, Math.round(ms / 60e3));
-    return mins < 60 ? `${mins} min` : `${Math.floor(mins / 60)} hr${mins % 60 ? ` ${mins % 60} min` : ''}`;
-  };
-  // When the browser has not allowed the Purdue sites (BoilerClasses, BoilerExams, purdue.io),
-  // say so once at the top of the Dashboard, with one button for all of them. (Firefox does not
-  // grant an add-on's newly added sites by itself.) Only for students with Purdue courses.
-  function purdueAccess(courseList) {
-    const runtime = (globalThis.browser || globalThis.chrome)?.runtime;
-    if (!runtime || !runtime.sendMessage || !BSX.boiler || !courseList.some((c) => BSX.boiler.code(c))) return null;
-    const check = runtime.sendMessage({ type: 'bsx-access' }).then((r) => (r && r.missing) || []).catch(() => []);
-    return ui.lazy(check, (missing) => (missing.length
-      ? ui.sideSection('Allow Purdue extras', [
-          h('p', { class: 'muted small' }, `Class times, upcoming exams and course GPAs need this extension to be allowed on ${[...new Set(missing.map((o) => new URL(o.replace('*', 'x')).hostname.replace(/^www[.]/, '')))].join(', ')}.`),
-          h('button', { class: 'btn primary', type: 'button', onclick: () => runtime.sendMessage({ type: 'bsx-grant', site: 'purdue' }) }, 'Allow access'),
-          h('p', { class: 'muted small' }, 'Then come back and press Refresh.'),
-        ])
-      : null), '');
-  }
-
-  // `compact` (beside the Tasks Panel): only the class on now or next, as "Next Class".
-  function todayClasses(courseList, { compact = false } = {}) {
-    const P = BSX.pio;
-    if (!P || !ui.pickedCrns) return null;
-    const today = new Date();
-    // On a break (Thanksgiving, spring break …) there are no classes: say so instead.
-    const off = P.breakOn(today);
-    if (off) return compact ? null : ui.sideSection('Today’s Classes', h('p', { class: 'muted small' }, `No classes today: ${off}.`));
-    const found = Promise.all(courseList.map(async (c) => {
-      const d = await P.sections(c).catch(() => null);
-      if (!d) return [];
-      const { crns } = await ui.pickedCrns(c, d);
-      return P.meetingsOn(d, crns, today).map((x) => ({ ...x, course: c }));
-    })).then((all) => all.flat().sort((a, b) => a.start - b.start));
-    return ui.lazy(found, (list) => {
-      if (!list.length) return null;
-      const now = Date.now();
-      const next = list.find((x) => x.end.getTime() > now);
-      if (compact && !next) return null; // the day's classes are over
-      return ui.sideSection(compact ? 'Next Class' : 'Today’s Classes', (compact ? [next] : list).map((x) => {
-        const live = x.start.getTime() <= now && now < x.end.getTime();
-        const over = x.end.getTime() <= now;
-        const m = x.meeting;
-        const url = P.mapUrl(m);
-        return h('div', { class: over ? 'todo past' : 'todo' },
-          h('span', { class: 'todoic', style: `color:${tint(x.course.id)}` }, ic('clock')),
-          h('div', { class: 'tmid' },
-            h('a', { class: 't', href: courseHref(x.course.id) }, nameOf(x.course)),
-            h('div', { class: 'm' }, `${ui.fmt.time.format(x.start)}–${ui.fmt.time.format(x.end)} · ${x.section.type} · `, url ? h('a', { href: url, target: '_blank', rel: 'noopener noreferrer', title: m.building.name }, P.where(m)) : P.where(m)),
-            live ? h('div', { class: 'm' }, ui.tag('now')) : x === next ? h('div', { class: 'm' }, ui.tag(`in ${until(x.start.getTime() - now)}`)) : null));
-      }));
-    }, '');
-  }
-
-  // Placed by each page above its To Do (course pages pass `labels: false`).
-  ui.examsSide = (courseList, { labels = true } = {}) => examsSide(courseList, labels);
-  function examsSide(courseList, labels) {
-    const B = BSX.boiler;
-    if (!B) return null;
-    const now = Date.now();
-    const found = Promise.all(courseList.map((c) => B.examsCourse(c).then((e) => (e ? (e.events || []).map((x) => ({ ...x, course: c, url: e.url })) : [])).catch(() => [])))
-      .then((all) => all.flat().filter((x) => x.start && Date.parse(x.end || x.start) >= now && Date.parse(x.start) <= now + 28 * ui.DAY).sort((a, b) => Date.parse(a.start) - Date.parse(b.start)));
-    return ui.lazy(found, (list) => (list.length ? ui.sideSection('Upcoming Exams', list.map((x) => h('div', { class: 'todo' },
-      h('span', { class: 'todoic', style: `color:${tint(x.course.id)}` }, ic('quiz')),
-      h('div', { class: 'tmid' },
-        h('span', { class: 't dark' }, x.title || (x.type === 'FINAL' ? 'Final' : 'Exam')),
-        labels ? h('div', { class: 'ctx', style: `--c:${tint(x.course.id)}` }, nameOf(x.course)) : null,
-        h('div', { class: 'm' }, `${when(x.start)}${x.end ? `–${ui.fmt.time.format(new Date(x.end))}` : ''}`),
-        x.location ? h('div', { class: 'm' }, x.location) : null,
-        h('div', { class: 'm' }, h('a', { href: x.url, target: '_blank', rel: 'noopener noreferrer' }, 'Practice on BoilerExams ', ic('external', 12))))))) : null), '');
   }
 
   // To Do (overdue first), Recent Feedback, and a grades button.
@@ -156,12 +65,6 @@
     const saved = settings.courses[c.id] || {};
     let color = COLORS.includes(saved.color) ? saved.color : null;
     const nick = h('input', { class: 'txt', type: 'text', maxlength: '60', value: saved.nickname || '', placeholder: c.name });
-    // The Purdue course this one is (for GPAs, exams and class times), when its name has no code
-    // or the wrong one: "EAPS 10600", "KOR 10100". Blank means the code found in its name.
-    const found = BSX.boiler ? BSX.boiler.parseCode(c.code) || BSX.boiler.parseCode(c.name) : null;
-    const pretty = (x) => x.replace(/^([A-Z]+)(\d+)$/, '$1 $2');
-    const codeBox = h('input', { class: 'txt', type: 'text', maxlength: '12', value: saved.code ? pretty(saved.code) : '', placeholder: found ? `Found: ${pretty(found)}` : 'e.g. KOR 10100', 'aria-label': 'Purdue course code' });
-    const codeNote = h('span', { class: 'muted small' });
     const swatches = COLORS.map((col) => h('button', { class: 'sw', type: 'button', style: `background:${col}`, 'aria-label': `Colour ${col}`, onclick: () => { color = col; mark(); } }));
     const mark = () => swatches.forEach((b, i) => b.classList.toggle('on', COLORS[i] === (color || colorOf(c.id))));
     mark();
@@ -176,42 +79,13 @@
       const next = {};
       if (nick.value.trim()) next.nickname = nick.value.trim();
       if (color) next.color = color;
-      const typed = codeBox.value.trim().toUpperCase();
-      if (typed) {
-        const parsed = BSX.boiler && BSX.boiler.parseCode(typed);
-        if (!parsed) {
-          codeNote.textContent = 'Use a subject and number, like KOR 10100.';
-          codeBox.focus();
-          return;
-        }
-        next.code = parsed;
-      }
       done(next);
     };
     nick.addEventListener('keydown', (ev) => ev.key === 'Enter' && save());
-    codeBox.addEventListener('keydown', (ev) => ev.key === 'Enter' && save());
     return h('div', { class: 'edit' },
       h('label', null, 'Nickname', nick),
-      BSX.boiler ? h('label', null, 'Purdue course code', codeBox, codeNote) : null,
       h('label', null, 'Colour', h('div', { class: 'swatches' }, swatches)),
       h('div', { class: 'row' }, ui.button('Apply', save, 'primary'), ui.button('Reset', () => done(null)), ui.button('Cancel', () => { editing = null; ui.render(); })));
-  }
-
-  // The course's usual GPA from BoilerClasses (this term's instructor when there is data for
-  // them), as a small tag on its card. Coloured from red (hard) to green.
-  function gpaBadge(c) {
-    const B = BSX.boiler;
-    if (!B || !B.code(c)) return null;
-    const tag = h('span', { class: 'gpabadge', hidden: true });
-    B.classes(c).then((d) => {
-      const dist = d && B.distribution(d, d.instructor[B.term(c)] || []);
-      if (!dist) return;
-      tag.textContent = `GPA ${dist.gpa.toFixed(2)}`;
-      tag.title = `Average GPA, ${dist.forInstructor ? dist.instructors.join(' & ') : 'all instructors'}, over ${dist.semesters} semester${dist.semesters === 1 ? '' : 's'} (BoilerClasses)`;
-      tag.dataset.level = dist.gpa >= 3.3 ? 'easy' : dist.gpa >= 2.8 ? 'mid' : 'hard';
-      tag.hidden = false;
-    }).catch(() => {});
-    return tag;
   }
 
   function card(c) {
@@ -233,7 +107,7 @@
     const body = editing === c.id
       ? cardEditor(c)
       : [
-          h('a', { class: 'text', href: courseHref(c.id), title: name === c.name ? name : `${name} (${c.name})` }, h('span', { class: 'name', style: `--c:${colorOf(c.id)}` }, name), h('span', { class: 'code' }, c.course_code, gpaBadge(c))),
+          h('a', { class: 'text', href: courseHref(c.id), title: name === c.name ? name : `${name} (${c.name})` }, h('span', { class: 'name', style: `--c:${colorOf(c.id)}` }, name), h('span', { class: 'code' }, c.course_code)),
           h('div', { class: 'cardics' },
             action('announcements', 'announcement', 'Announcements'),
             action('assignments', 'assignment', 'Assignments', (u) => u.feedback),
@@ -506,7 +380,6 @@
       h('button', { class: 'btn', type: 'button', onclick: () => ui.todoDialog(null, visible) }, ic('plus', 16), 'To Do'),
       ui.menu('Dashboard Options', [
         { label: 'Tasks Panel', on: Boolean(settings.tasks), onclick: () => { settings.tasks = !settings.tasks; ui.saveSettings(); ui.render(); } },
-        { label: 'Upcoming Exams', on: settings.dashExams !== false, onclick: () => { settings.dashExams = settings.dashExams === false; ui.saveSettings(); ui.render(); } },
         { label: '24-Hour Clock', on: Boolean(settings.clock24), onclick: () => { settings.clock24 = !settings.clock24; ui.applyClock(); ui.saveSettings(); ui.render(); } },
         null,
         pick('cards', 'Card View'), pick('list', 'List View'), pick('activity', 'Recent Activity'),
@@ -525,11 +398,7 @@
     else if (mode === 'activity') body = activityView(visible);
     else body = visible.length ? h('div', { class: 'cards' }, visible.map(card)) : ui.empty('No current courses found.');
     // With the Tasks panel on, it takes the To Do list's place at the top of the sidebar.
-    // Classes on top (just the next one beside the Tasks Panel, so it stays the main thing), then
-    // To Do or the Tasks Panel, then upcoming exams (Dashboard Options can hide them), then feedback.
-    const [todo, ...rest] = ui.todoSide(visible);
-    const exams = settings.dashExams === false ? null : ui.examsSide(visible);
-    const side = mode === 'list' ? null : [purdueAccess(visible), todayClasses(visible, { compact: Boolean(settings.tasks) }), settings.tasks ? tasksPanel(visible) : todo, exams, ...rest];
+    const side = mode === 'list' ? null : settings.tasks ? [tasksPanel(visible), ...ui.todoSide(visible).slice(1)] : ui.todoSide(visible);
     return { title: 'Dashboard', actions, body: [body, toggle], side };
   };
 
@@ -561,128 +430,36 @@
   // Short labels for module entry kinds; Brightspace's internal ones ("ContentService") read as "Content".
   const KIND_LABEL = { 'Module overview': 'Module', 'External tool': 'Tool', File: 'File', Link: 'Link', Assignment: 'Assignment', Quiz: 'Quiz', Discussion: 'Discussion', 'Course home': 'Course', Syllabus: 'Syllabus' };
   const kindLabel = (type) => KIND_LABEL[type] || 'Content';
-  // A few requests at a time, for the deep search's one-per-item reads.
-  async function pool(jobs, size) {
-    const out = new Array(jobs.length);
-    let next = 0;
-    await Promise.all(Array.from({ length: Math.min(size, jobs.length) }, async () => {
-      while (next < jobs.length) {
-        const n = next++;
-        out[n] = await jobs[n]().catch(() => null);
-      }
-    }));
-    return out;
-  }
-  const plain = (html, text) => ui.plainOf(html || '', text || '').replace(/\s+/g, ' ').trim();
-  // Labelled text a result can also be found by, for a deep search: [['Instructions', …], …].
-  const detailOf = (parts) => parts.filter(([, t]) => t);
-
-  // Deep search (Shift+S) also reads, per course: assignment instructions and feedback, quiz
-  // descriptions, discussion descriptions and every post, module text, the syllabus, and the
-  // class list. These are one request per assignment, quiz or discussion, through the same cache
-  // as the pages, so a later deep search is mostly instant.
-  async function deepIndex(c, work, course) {
-    const asg = work.filter((a) => a.kind === 'assignment');
-    const qz = work.filter((a) => a.kind === 'quiz');
-    const ds = work.filter((a) => a.kind === 'discussion');
-    const B = BSX.boiler;
-    const [details, quizzes, topics, syllabus, people, about, practice] = await Promise.all([
-      pool(asg.map((a) => () => data.assignment(c.id, a.source_id)), 4),
-      pool(qz.map((a) => () => data.quiz(c.id, a.source_id)), 4),
-      pool(ds.map((a) => () => data.discussion(c.id, a.source_id)), 4),
-      data.syllabus(c.id).catch(() => null),
-      data.people(c.id).catch(() => []),
-      B ? B.classes(c).catch(() => null) : null,
-      B ? B.examsCourse(c).catch(() => null) : null,
-    ]);
-    // BoilerClasses' description of the course, and BoilerExams' topics and past exams.
-    const boiler = [
-      ...(about ? [{ title: `About ${about.title}`, kind: 'BoilerClasses', where: course, course: c.id, href: `https://www.boilerclasses.com/detail/${about.id}`, external: true, text: `${about.title} boilerclasses`, detail: detailOf([['Description', about.description], ['Prerequisites', B.prereqText(about.prereqs)]]) }] : []),
-      ...(practice ? practice.topics.map((t) => ({ title: t.name, kind: 'BoilerExams', where: `${course} · practice topic · ${t.questions} question${t.questions === 1 ? '' : 's'}`, course: c.id, href: B.topicUrl(practice.code, t.name), external: true, text: `${t.name} boilerexams practice` })) : []),
-      ...(practice ? practice.exams.map((x) => ({ title: B.examLabel(x), kind: 'BoilerExams', where: `${course} · past exam${x.questions ? ` · ${x.questions} questions` : ''}`, course: c.id, href: B.examUrl(practice.code, x), external: true, text: `${B.examLabel(x)} past exam boilerexams` })) : []),
-    ];
-    const extra = new Map(); // work item id -> its detail text
-    details.forEach((d, n) => d && extra.set(asg[n].id, detailOf([['Instructions', plain(d.description_html, d.description)], ['Feedback', d.feedback && plain(d.feedback.comment_html, d.feedback.comment)], ...(d.submissions || []).map((s) => ['Your comment', s.comment])])));
-    quizzes.forEach((q, n) => q && extra.set(qz[n].id, detailOf([['Description', plain(q.description_html, q.description)], ['Instructions', plain(q.instructions_html, q.instructions)]])));
-    const posts = [];
-    topics.forEach((t, n) => {
-      if (!t) return;
-      extra.set(ds[n].id, detailOf([['Description', plain(t.description_html, t.description)]]));
-      for (const p of t.posts || []) {
-        posts.push({ title: p.subject || `Re: ${t.name}`, kind: 'Post', where: `${course} · ${t.name} · ${p.mine ? 'you' : p.author}${p.posted_at ? ` · ${when(p.posted_at)}` : ''}`, course: c.id, href: itemHref(c.id, ds[n]), text: `${p.subject} ${t.name} ${p.author}`, detail: detailOf([['Post', plain(p.message_html, p.message)]]) });
-      }
-    });
-    return {
-      extra,
-      more: [
-        ...posts,
-        ...boiler,
-        ...(syllabus && (syllabus.text || syllabus.html) ? [{ title: 'Syllabus', kind: 'Syllabus', where: course, course: c.id, href: courseHref(c.id, 'syllabus'), text: `syllabus ${course}`, detail: detailOf([['Syllabus', plain(syllabus.html, syllabus.text)]]) }] : []),
-        ...people.map((p) => ({ title: p.name, kind: 'Person', where: `${course}${p.role ? ` · ${p.role}` : ''}`, course: c.id, href: courseHref(c.id, 'people'), text: `${p.name} ${p.role}` })),
-      ],
-    };
-  }
-
-  async function searchIndex(deep) {
-    // Today's dining menus too (on the Menus page, a week back through two weeks ahead; in a
-    // deep search, six weeks back, by ingredient too).
-    const food = ui.menuSearch ? ui.menuSearch({ deep }).catch(() => []) : Promise.resolve([]);
-    // A deep search covers every course, past terms included.
-    const all = await data.courses();
-    const courses = deep ? all : ui.focusCourses(all);
-    const per = await pool(courses.map((c) => async () => {
+  async function searchIndex() {
+    const courses = ui.focusCourses(await data.courses());
+    const per = await Promise.all(courses.map(async (c) => {
       const [mods, work, news] = await Promise.all([data.modules(c.id).catch(() => []), data.assignments(c.id).catch(() => []), data.announcements(c.id).catch(() => [])]);
       const course = nameOf(c);
-      const { extra, more } = deep ? await deepIndex(c, work, course) : { extra: new Map(), more: [] };
       // A module entry that is the same assignment, quiz or discussion as one in the work
       // list is listed once, as the work item (it has the due date).
       const workKeys = new Set(work.map((a) => `${a.kind}:${a.name.trim().toLowerCase()}`));
       const dup = (i) => workKeys.has(`${String(i.type).toLowerCase()}:${String(i.title).trim().toLowerCase()}`);
       return [
-        ...mods.flatMap((m) => m.items.filter((i) => !dup(i)).map((i) => ({ title: i.title, kind: kindLabel(i.type), where: `${course} · ${m.name}`, course: c.id, href: LINKED.has(i.type) ? courseHref(c.id, 'modules', i.id) : i.html_url, text: `${i.title} ${m.name}`, detail: deep && i.type === 'Module overview' ? detailOf([['Module', plain(i.description_html, i.description)]]) : null }))),
-        ...work.map((a) => ({ title: a.name, kind: { assignment: 'Assignment', quiz: 'Quiz', discussion: 'Discussion' }[a.kind], where: `${course}${a.due_at ? ` · due ${when(a.due_at)}` : ''}`, course: c.id, href: itemHref(c.id, a), text: `${a.name} ${a.forum || ''}`, detail: extra.get(a.id) || null })),
+        ...mods.flatMap((m) => m.items.filter((i) => !dup(i)).map((i) => ({ title: i.title, kind: kindLabel(i.type), where: `${course} · ${m.name}`, course: c.id, href: LINKED.has(i.type) ? courseHref(c.id, 'modules', i.id) : i.html_url, text: `${i.title} ${m.name}` }))),
+        ...work.map((a) => ({ title: a.name, kind: { assignment: 'Assignment', quiz: 'Quiz', discussion: 'Discussion' }[a.kind], where: `${course}${a.due_at ? ` · due ${when(a.due_at)}` : ''}`, course: c.id, href: itemHref(c.id, a), text: `${a.name} ${a.forum || ''}` })),
         ...news.map((n) => ({ title: n.title, kind: 'Announcement', where: `${course}${n.posted_at ? ` · ${when(n.posted_at)}` : ''}`, course: c.id, href: courseHref(c.id, 'announcements', n.id), text: `${n.title} ${ui.plainOf(n.message_html, n.message)}` })),
-        ...more,
       ];
-    }), deep ? 3 : courses.length);
+    }));
     const outside = await ui.externalWork(courses).catch(() => []);
     const names = new Map(courses.map((c) => [c.id, nameOf(c)]));
-    return [...per.filter(Boolean).flat(), ...(await food), ...outside.map((x) => ({ title: x.name, kind: x.source, where: `${names.get(x.course_id) || ''}${x.due_at ? ` · due ${when(x.due_at)}` : ''}`, course: x.course_id, href: x.html_url, external: true, text: `${x.name} ${x.group || ''}` }))];
+    return [...per.flat(), ...outside.map((x) => ({ title: x.name, kind: x.source, where: `${names.get(x.course_id) || ''}${x.due_at ? ` · due ${when(x.due_at)}` : ''}`, course: x.course_id, href: x.html_url, external: true, text: `${x.name} ${x.group || ''}` }))];
   }
-
-  // Where in a result's deeper text (instructions, a post, a dish's ingredients) a search word
-  // turned up, when it is not in the title: the label of that part, and the words around it.
-  // `r.detail` is a list of [label, text] parts, such as [['Instructions', …], ['Feedback', …]].
-  function detailHit(r, words) {
-    if (!r.detail || !r.detail.length) return null;
-    const seen = `${r.title} ${r.where}`.toLowerCase();
-    for (const w of words.filter((x) => !seen.includes(x))) {
-      for (const [label, text] of r.detail) {
-        const at = text.toLowerCase().indexOf(w);
-        if (at < 0) continue;
-        const start = Math.max(0, at - 50);
-        const end = at + w.length + 50;
-        return `${label}: ${start ? '…' : ''}${text.slice(start, end).trim()}${end < text.length ? '…' : ''}`;
-      }
-    }
-    return null;
-  }
-  const detailText = (r) => (r.detail ? r.detail.map(([, t]) => t).join(' ') : '');
 
   // The search dialog: type to filter (every word must match), arrows and Enter to open.
-  // Deep (Shift+S): every course, past terms included, by instructions, feedback, posts, module
-  // text, syllabus and people too; and menus six weeks back through two weeks ahead, by
-  // ingredient too.
-  ui.searchDialog = ({ deep = false } = {}) => {
+  ui.searchDialog = () => {
     const app = ui.appEl();
     if (!app || app.querySelector('.modal')) return;
-    const title = deep ? 'Deep search' : 'Search all courses';
-    const input = h('input', { class: 'txt', type: 'search', placeholder: deep ? 'Search instructions, feedback, posts, syllabi, people, menus and ingredients…' : 'Search modules, assignments, announcements, menus…', 'aria-label': title });
-    const list = h('div', { class: 'gsearch', role: 'listbox', 'aria-label': 'Results' }, h('div', { class: 'muted small pad' }, deep ? 'Reading every course (instructions, feedback, posts, syllabi, people) and eight weeks of menus. This takes a while the first time…' : 'Loading your courses…'));
+    const input = h('input', { class: 'txt', type: 'search', placeholder: 'Search modules, assignments, announcements…', 'aria-label': 'Search all courses' });
+    const list = h('div', { class: 'gsearch', role: 'listbox', 'aria-label': 'Results' }, h('div', { class: 'muted small pad' }, 'Loading your courses…'));
     const close = () => overlay.remove();
     const overlay = h('div', { class: 'modal', onclick: (ev) => ev.target === overlay && close() },
-      h('div', { class: 'dialog wide', role: 'dialog', 'aria-label': title },
-        h('div', { class: 'trayhead' }, h('h2', null, title), h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Close', onclick: close }, ic('close'))),
+      h('div', { class: 'dialog wide', role: 'dialog', 'aria-label': 'Search all courses' },
+        h('div', { class: 'trayhead' }, h('h2', null, 'Search all courses'), h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Close', onclick: close }, ic('close'))),
         input, list));
     let index = null;
     let shown = [];
@@ -696,18 +473,18 @@
       if (!index) return;
       const words = input.value.toLowerCase().split(/\s+/).filter(Boolean);
       if (!words.length) {
-        list.replaceChildren(h('div', { class: 'muted small pad' }, deep ? `Type to search ${index.length} items across all your courses and eight weeks of dining menus, including instructions, feedback, posts and ingredients.` : `Type to search ${index.length} items across your courses and the dining menus.`));
+        list.replaceChildren(h('div', { class: 'muted small pad' }, `Type to search ${index.length} items across your courses.`));
         shown = [];
         return;
       }
-      shown = index.filter((r) => words.every((w) => `${r.text} ${r.where} ${r.kind} ${detailText(r)}`.toLowerCase().includes(w)))
+      shown = index.filter((r) => words.every((w) => `${r.text} ${r.where} ${r.kind}`.toLowerCase().includes(w)))
         .sort((a, b) => Number(!a.title.toLowerCase().includes(words[0])) - Number(!b.title.toLowerCase().includes(words[0])))
-        .slice(0, 200);
+        .slice(0, 60);
       at = Math.min(at, Math.max(0, shown.length - 1));
       list.replaceChildren(...(shown.length
         ? shown.map((r, n) => h('a', { class: n === at ? 'gres on' : 'gres', href: r.href, role: 'option', 'aria-selected': String(n === at), target: r.external ? '_blank' : null, rel: r.external ? 'noopener noreferrer' : null, style: `--c:${colorOf(r.course)}`, onclick: (ev) => { ev.preventDefault(); open(r); } },
             h('span', { class: 'gkind' }, r.kind),
-            h('span', { class: 'imid' }, h('span', { class: 't' }, r.title, r.external ? [' ', ic('external', 12)] : null), h('span', { class: 'ctx' }, r.where), deep ? h('span', { class: 'muted small' }, detailHit(r, words)) : null)))
+            h('span', { class: 'imid' }, h('span', { class: 't' }, r.title, r.external ? [' ', ic('external', 12)] : null), h('span', { class: 'ctx' }, r.where))))
         : [h('div', { class: 'muted small pad' }, 'Nothing matches.')]));
       list.querySelector('.gres.on')?.scrollIntoView({ block: 'nearest' });
     };
@@ -720,7 +497,7 @@
     });
     app.append(overlay);
     input.focus();
-    searchIndex(deep).then((items) => { index = items; draw(); }).catch((e) => list.replaceChildren(h('div', { class: 'muted small pad' }, `Search is unavailable. ${e.message || e}`)));
+    searchIndex().then((items) => { index = items; draw(); }).catch((e) => list.replaceChildren(h('div', { class: 'muted small pad' }, `Search is unavailable. ${e.message || e}`)));
   };
 
   // ---- Connected sites: Gradescope and Ed Discussion -------------------------

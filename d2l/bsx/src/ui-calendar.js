@@ -25,41 +25,7 @@
     const outside = (await ui.externalWork(shown).catch(() => []))
       .filter((i) => i.due_at && Date.parse(i.due_at) >= gridStart.getTime() && Date.parse(i.due_at) <= gridEnd.getTime())
       .map((i) => ({ external: i, title: i.name, course_id: i.course_id, start_at: i.due_at, all_day: false }));
-    // Exam dates and rooms from BoilerExams, for the courses it covers, unless Brightspace already
-    // has an exam for that course that day.
-    const B = BSX.boiler;
-    const inGrid = (t) => t && Date.parse(t) >= gridStart.getTime() && Date.parse(t) <= gridEnd.getTime();
-    const examDay = new Set(fetched.filter((e) => B && B.isExam(e.title)).map((e) => `${e.course_id}|${ui.dayKey(new Date(e.start_at))}`));
-    const boilerExams = B
-      ? (await Promise.all(shown.map((c) => B.examsCourse(c).then((x) => (x ? x.events.map((ev) => ({ ...ev, c, url: x.url })) : [])).catch(() => [])))).flat()
-          .filter((ev) => inGrid(ev.start) && !examDay.has(`${ev.c.id}|${ui.dayKey(new Date(ev.start))}`))
-          .map((ev) => ({ title: ev.title || (ev.type === 'FINAL' ? 'Final' : 'Exam'), course_id: ev.c.id, start_at: ev.start, end_at: ev.end, all_day: false, location: ev.location, boiler: ev.url, description: '' }))
-      : [];
-    // Class meetings from purdue.io for the picked sections, when "Class times" is ticked.
-    const P = BSX.pio;
-    const classes = settings.calClasses && P && ui.pickedCrns
-      ? (await Promise.all(shown.map(async (c) => {
-          const d = await P.sections(c).catch(() => null);
-          if (!d) return [];
-          const { crns } = await ui.pickedCrns(c, d);
-          const out = [];
-          for (let t = gridStart.getTime(); t < gridEnd.getTime(); t += ui.DAY) {
-            for (const x of P.meetingsOn(d, crns, new Date(t))) {
-              out.push({ title: `${x.section.type} · ${P.where(x.meeting)}`, course_id: c.id, start_at: x.start.toISOString(), end_at: x.end.toISOString(), all_day: false, location: x.meeting.building ? `${P.where(x.meeting)} (${x.meeting.building.name})` : P.where(x.meeting), classTime: true, description: '' });
-            }
-          }
-          return out;
-        }))).flat()
-      : [];
-    // With class times on, each day of a break (from the Registrar's calendar) says so.
-    if (settings.calClasses && P) {
-      for (let t = gridStart.getTime(); t < gridEnd.getTime(); t += ui.DAY) {
-        const day = new Date(t);
-        const name = P.breakOn(day);
-        if (name) classes.push({ title: name, course_id: null, start_at: new Date(day.getFullYear(), day.getMonth(), day.getDate()).toISOString(), all_day: true, classTime: true, description: 'No classes (Purdue Registrar’s academic calendar).' });
-      }
-    }
-    const events = [...fetched, ...mine, ...outside, ...boilerExams, ...classes].sort((a, b) => Date.parse(a.start_at) - Date.parse(b.start_at));
+    const events = [...fetched, ...mine, ...outside].sort((a, b) => Date.parse(a.start_at) - Date.parse(b.start_at));
 
     const byDay = new Map();
     for (const e of events) {
@@ -81,18 +47,6 @@
     };
 
     // Canvas's event popover: when, where, which calendar, and the details.
-    // An exam's "Practice on BoilerExams" link, when BoilerExams has past exams for its course.
-    function practice(e) {
-      const B = BSX.boiler;
-      const course = B && e.course_id != null && (e.boiler || B.isExam(e.title)) ? courses.find((c) => c.id === e.course_id) : null;
-      if (!course) return null;
-      const row = h('div', { class: 'row' });
-      const fill = (url) => row.replaceChildren(h('a', { class: 'btn', href: url, target: '_blank', rel: 'noopener noreferrer' }, 'Practice on BoilerExams ', ic('external', 14)));
-      if (e.boiler) fill(e.boiler);
-      else B.examsFor(course).then((x) => x && fill(x.url)).catch(() => {});
-      return row;
-    }
-
     function eventDialog(e, where) {
       const app = ui.appEl();
       if (!app) return;
@@ -108,8 +62,6 @@
             e.location ? [h('dt', null, ic('home', 16)), h('dd', null, e.location)] : null,
             h('dt', null, h('span', { class: 'dot', style: `background:${e.course_id == null ? 'var(--muted)' : colorOf(e.course_id)}` })), h('dd', null, where)),
           e.description ? ui.prose(e.description, e.description) : null,
-          practice(e),
-          e.boiler ? h('p', { class: 'muted small' }, 'Date and room from BoilerExams.') : null,
           e.html_url ? h('div', { class: 'row' }, h('a', { class: 'btn', href: e.html_url, onclick: close }, 'More details')) : null));
       app.append(overlay);
       overlay.querySelector('.iconbtn').focus();
@@ -153,10 +105,7 @@
       title: ui.fmt.month.format(first),
       actions,
       body: [body, h('p', { class: 'muted small' }, 'From the Brightspace calendar.')],
-      side: [
-        ui.sideSection('Calendars', [toggle({ id: 0, name: 'My To Do' }), listed.map(toggle)]),
-        BSX.pio ? h('label', { class: 'calrow', title: 'Lectures, labs and PSOs for the sections picked on each course’s Home (from purdue.io)' }, h('input', { type: 'checkbox', checked: settings.calClasses, onchange: (ev) => { settings.calClasses = ev.target.checked; ui.saveSettings(); ui.render(); } }), h('span', null, 'Class times')) : null,
-      ],
+      side: ui.sideSection('Calendars', [toggle({ id: 0, name: 'My To Do' }), listed.map(toggle)]),
     };
   };
 

@@ -60,24 +60,12 @@
 
   // ---- course navigation -----------------------------------------------------
   function courseNav(course, current) {
-    // The course's own external tools, then BoilerExams when it has past exams for this course.
     const tools = h('div');
-    let toolLinks = [];
-    let examLink = null;
-    const drawTools = () => tools.replaceChildren(...(toolLinks.length || examLink ? [h('div', { class: 'sep' }, 'External tools'), ...toolLinks, examLink].filter(Boolean) : []));
     data.externalTools(course.id)
       .then((list) => {
-        toolLinks = list.slice(0, 8).map((t) => h('a', { href: courseHref(course.id, 'modules', t.id) }, t.title, ' ', ic('external', 13)));
-        drawTools();
+        if (list.length) tools.replaceChildren(h('div', { class: 'sep' }, 'External tools'), ...list.slice(0, 8).map((t) => h('a', { href: courseHref(course.id, 'modules', t.id) }, t.title, ' ', ic('external', 13))));
       })
       .catch(() => {});
-    if (BSX.boiler) {
-      BSX.boiler.examsFor(course).then((e) => {
-        if (!e) return;
-        examLink = h('a', { href: e.url, target: '_blank', rel: 'noopener noreferrer', title: 'Past exams for this course on BoilerExams' }, 'BoilerExams', ' ', ic('external', 13));
-        drawTools();
-      }).catch(() => {});
-    }
     // Brightspace's Course Tools and the rest of its navigation bar (Class Progress and so
     // on). These are Brightspace pages; a click opens them inside the wrapper.
     const more = h('div');
@@ -319,10 +307,7 @@
           h('a', { class: 'btn wide', href: '#/calendar' }, ic('calendar', 16), 'View Course Calendar'),
           // Shown only once the notification settings link is found on the Brightspace page.
           ui.lazy(data.notificationsLink(course.id).catch(() => null), (href) => (href ? h('a', { class: 'btn wide', href }, ic('inbox', 16), 'View Course Notifications') : null), '')),
-        classPanel(course),
-        ui.examsSide([course], { labels: false }),
         ui.todoSide([course], { labels: false, gradesHref: courseHref(course.id, 'grades'), only: course.id }),
-        aboutCourse(course),
       ],
     };
   }
@@ -811,146 +796,6 @@
     };
   }
 
-  // ---- BoilerClasses on Grades --------------------------------------------------
-  // How this course usually turns out (Purdue's grade data, via boilerclasses.com): the average
-  // GPA for this term's instructor and overall, the grade spread, and roughly where the
-  // student's current total would land in it. Shown only for courses BoilerClasses has.
-  function boilerPanel(course, g) {
-    const B = BSX.boiler;
-    if (!B || !B.code(course)) return null;
-    const percent = g.final && g.final.points_possible > 0 ? (g.final.score / g.final.points_possible) * 100
-      : g.estimate && g.estimate.points_possible > 0 ? (g.estimate.score / g.estimate.points_possible) * 100 : null;
-    const grant = () => h('button', { class: 'btn', type: 'button', onclick: () => (globalThis.browser || globalThis.chrome)?.runtime?.sendMessage({ type: 'bsx-grant', site: 'boiler' }) }, 'Allow BoilerClasses access');
-    return ui.lazy(B.classes(course).catch((e) => ({ error: e })), (data) => {
-      if (data && data.error) {
-        return data.error.code === 'permission'
-          ? ui.sideSection('Past grades', [h('p', { class: 'muted small' }, 'Your browser has not allowed this extension on boilerclasses.com yet. '), grant()])
-          : null;
-      }
-      if (!data) return null;
-      const term = B.term(course);
-      const teaching = data.instructor[term] || [];
-      const dist = B.distribution(data, teaching);
-      if (!dist) return null;
-      const where = percent != null ? B.percentile(dist.shares, percent) : null;
-      const who = dist.forInstructor ? dist.instructors.join(' & ') : 'all instructors';
-      const bar = h('div', { class: 'gdist', role: 'img', 'aria-label': B.bands(dist.shares).map((b) => `${b.band} ${Math.round(b.share)}%`).join(', ') },
-        B.bands(dist.shares).map((b) => (b.share >= 0.5 ? h('span', { class: `gband g${b.band}`, style: `flex-grow:${b.share}`, title: `${b.band}: ${b.share.toFixed(1)}%` }, b.share >= 7 ? `${b.band} ${Math.round(b.share)}%` : '') : null)));
-      return ui.sideSection('Past grades', [
-        h('div', { class: 'bcgpa' }, h('span', { class: 'bigscore' }, dist.gpa.toFixed(2)), h('span', { class: 'muted small' }, ` average GPA, ${who} (${dist.semesters} semester${dist.semesters === 1 ? '' : 's'})`)),
-        dist.forInstructor && data.averageGpa != null ? h('div', { class: 'muted small' }, `All instructors: ${Number(data.averageGpa).toFixed(2)}`) : null,
-        bar,
-        where
-          ? h('p', { class: 'small bcwhere' }, 'At ', h('b', null, `${num(percent)}%`), ` (about ${where.letter}), you’d be around the `, h('b', null, `${ordinal(where.percentile)} percentile`), ' of past classes.')
-          : h('p', { class: 'muted small' }, 'Your percentile shows once you have a total here.'),
-        h('p', { class: 'muted small' }, `Assumes a 97/93/90… letter scale and that this class ends like past ones${dist.forInstructor ? ` with ${who}` : ''}. Your syllabus’s scale comes first.`),
-        h('a', { class: 'sidelink', href: `https://www.boilerclasses.com/detail/${data.id}`, target: '_blank', rel: 'noopener noreferrer' }, 'More on BoilerClasses ', ic('external', 13)),
-      ]);
-    }, '');
-  }
-  // ---- class times (purdue.io) -------------------------------------------------
-  // The sections the student is in: the ones they picked, or else the lecture taught by one of
-  // the course's Brightspace instructors when that singles one out. `auto` says which.
-  async function pickedCrns(course, sectionsData) {
-    const saved = settings.sections[course.id];
-    if (saved) return { crns: saved, auto: false };
-    const people = await data.people(course.id).catch(() => []);
-    const names = people.filter((p) => /instructor/i.test(p.role)).map((p) => p.name);
-    return { crns: BSX.pio.autoPick(sectionsData, names), auto: true };
-  }
-  ui.pickedCrns = pickedCrns;
-  const clock = (d) => ui.fmt.time.format(d);
-  const meetingLine = (m) => {
-    const { start, end } = BSX.pio.at(new Date(), m);
-    return `${BSX.pio.dayLetters(m.days)} ${clock(start)}–${clock(end)}`;
-  };
-  const roomLink = (m) => {
-    const url = BSX.pio.mapUrl(m);
-    const text = BSX.pio.where(m);
-    return url ? h('a', { href: url, target: '_blank', rel: 'noopener noreferrer', title: m.building.name }, text) : text;
-  };
-
-  // "Class times" on the course's Home: when and where each picked section meets, and who teaches
-  // it; or, until sections are picked, a list to pick them from.
-  function classPanel(course) {
-    const P = BSX.pio;
-    if (!P || !BSX.boiler || !BSX.boiler.code(course)) return null;
-    const load = P.sections(course).then(async (d) => (d ? { d, ...(await pickedCrns(course, d)) } : null)).catch((e) => ({ error: e }));
-    return ui.lazy(load, (r) => {
-      if (!r) return null;
-      if (r.error) {
-        return r.error.code === 'permission'
-          ? ui.sideSection('Class times', [h('p', { class: 'muted small' }, 'Your browser has not allowed this extension on api.purdue.io yet. '), h('button', { class: 'btn', type: 'button', onclick: () => (globalThis.browser || globalThis.chrome)?.runtime?.sendMessage({ type: 'bsx-grant', site: 'pio' }) }, 'Allow purdue.io access')])
-          : null;
-      }
-      const box = h('div');
-      const showPicker = () => box.replaceChildren(...sectionPicker(course, r.d, r.crns));
-      // Lectures first, then labs, PSOs and the rest.
-      const mine = r.d.sections.filter((s) => r.crns.includes(s.crn)).sort((a, b) => Number(!/lecture/i.test(a.type)) - Number(!/lecture/i.test(b.type)));
-      if (!mine.length) showPicker();
-      else {
-        box.replaceChildren(...[
-          ...mine.flatMap((s) => s.meetings.filter((m) => m.start).map((m) => h('div', { class: 'ctime' },
-            h('div', { class: 't dark' }, s.type, h('span', { class: 'muted small' }, ` · CRN ${s.crn}`)),
-            h('div', { class: 'small' }, meetingLine(m), ' · ', roomLink(m)),
-            m.instructors.length ? h('div', { class: 'muted small' }, m.instructors.map((i, n) => [n ? ', ' : '', i.email ? h('a', { href: `mailto:${i.email}` }, i.name) : i.name])) : null))),
-          r.auto ? h('p', { class: 'muted small' }, 'Picked from your instructor. Add your lab or PSO with “Change sections”.') : null,
-          h('button', { class: 'btn small', type: 'button', onclick: showPicker }, 'Change sections')].filter(Boolean));
-      }
-      return ui.sideSection('Class times', box);
-    }, '');
-  }
-
-  // Every section of the course, grouped by type (Lecture, Laboratory, PSO …), to tick the
-  // student's own. Saved per course.
-  function sectionPicker(course, d, current) {
-    const chosen = new Set(current);
-    const byType = new Map();
-    for (const s of d.sections) {
-      if (!byType.has(s.type)) byType.set(s.type, []);
-      byType.get(s.type).push(s);
-    }
-    const label = (s) => s.meetings.filter((m) => m.start).map((m) => `${meetingLine(m)} · ${BSX.pio.where(m)}${m.instructors[0] ? ` · ${m.instructors[0].name.split(' ').pop()}` : ''}`).join('; ') || 'No set meeting time';
-    return [
-      h('p', { class: 'muted small' }, 'Brightspace doesn’t say which section you’re in. Tick yours (lecture, and any lab or PSO):'),
-      h('div', { class: 'secpick' }, [...byType].map(([type, list]) => [
-        h('div', { class: 'sep' }, type || 'Other'),
-        list.map((s) => {
-          const box = h('input', { type: 'checkbox', checked: chosen.has(s.crn) });
-          box.addEventListener('change', () => (box.checked ? chosen.add(s.crn) : chosen.delete(s.crn)));
-          return h('label', { class: 'calrow' }, box, h('span', null, label(s), h('span', { class: 'muted small' }, ` (CRN ${s.crn})`)));
-        }),
-      ])),
-      h('div', { class: 'row' },
-        ui.button('Save', () => { settings.sections[course.id] = [...chosen]; ui.saveSettings(); ui.render(); }, 'primary'),
-        settings.sections[course.id] ? ui.button('Reset', () => { delete settings.sections[course.id]; ui.saveSettings(); ui.render(); }) : null),
-    ];
-  }
-
-  // "About this course" from BoilerClasses: credits, prerequisites, gen eds and the catalogue
-  // description, on the course's Home and Syllabus pages.
-  function aboutCourse(course) {
-    const B = BSX.boiler;
-    if (!B || !B.code(course)) return null;
-    return ui.lazy(B.classes(course).catch(() => null), (d) => {
-      if (!d) return null;
-      const credits = [...new Set((d.credits || []).filter((x) => x != null))];
-      const pre = B.prereqText(d.prereqs);
-      const facts = [
-        credits.length ? ['Credits', credits.length > 1 ? `${Math.min(...credits)}–${Math.max(...credits)}` : String(credits[0])] : null,
-        ['Prerequisites', pre || 'None listed'],
-        d.gened && d.gened.length ? ['Gen ed', d.gened.join(', ')] : null,
-      ].filter(Boolean);
-      return ui.sideSection('About this course', [
-        h('dl', { class: 'about' }, facts.map(([k, v]) => [h('dt', null, k), h('dd', null, v)])),
-        d.description ? h('p', { class: 'muted small' }, d.description) : null,
-        h('a', { class: 'sidelink', href: `https://www.boilerclasses.com/detail/${d.id}`, target: '_blank', rel: 'noopener noreferrer' }, 'More on BoilerClasses ', ic('external', 13)),
-      ]);
-    }, '');
-  }
-
-  const ordinal = (n) => `${n}${[11, 12, 13].includes(n % 100) ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
-
   // ---- grades ------------------------------------------------------------------
   async function grades(course) {
     const id = course.id;
@@ -1135,7 +980,6 @@
           ? h('label', { class: 'calrow', style: 'margin-bottom:22px', title: 'Brightspace leaves these out of its own total; some courses count them anyway' }, h('input', { type: 'checkbox', checked: g.count_excluded, onchange: (ev) => { settings.countExcluded = ev.target.checked; ui.saveSettings(); ui.render(); } }), 'Count items marked “not counted”')
           : null,
         weights,
-        boilerPanel(course, g),
         ui.lazy(data.externalTools(id), (tools) => tools.length ? ui.sideSection('Graded elsewhere', [h('p', { class: 'muted small' }, 'Some work in this course is graded in an external tool and may not appear here.'), tools.map((t) => h('a', { class: 'sidelink', href: courseHref(id, 'modules', t.id) }, t.title, ' ', ic('external', 13)))]) : null, ''),
       ],
     };
@@ -1186,7 +1030,7 @@
               h('tbody', null, dated.map((a) => h('tr', null, h('td', { class: 'nowrap' }, ui.fmt.short.format(new Date(a.due_at))), h('td', null, h('span', { class: 'iic ok inline' }, ic(KIND[a.kind].icon, 18)), ' ', h('a', { href: itemHref(course.id, a) }, a.name)), h('td', { class: 'num muted small' }, `due by ${ui.fmt.time.format(new Date(a.due_at))}`)))))
           : ui.empty('No dated work in this course.'),
       ],
-      side: [aboutCourse(course), ui.examsSide([course], { labels: false }), ...ui.todoSide([course], { labels: false, gradesHref: courseHref(course.id, 'grades'), only: course.id })],
+      side: ui.todoSide([course], { labels: false, gradesHref: courseHref(course.id, 'grades'), only: course.id }),
     };
   }
 
