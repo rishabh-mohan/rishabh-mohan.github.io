@@ -4,6 +4,6 @@
   <defs>
     <path id="r" fill-rule="evenodd" d="M0 0H35C55 0 64 9 64 23C64 35 56 43 43 45L59 65H68V72H43L23 46H20V65H29V72H0V65H7V7H0ZM20 8V38H30C43 38 49 33 49 23C49 13 43 8 30 8Z"/>
   </defs>
-  <use href="#r" x="16" y="10" fill="#f5ce78" stroke="#172334" stroke-width="4" paint-order="stroke"/>
-  <use href="#r" x="42" y="46" fill="#efad48" stroke="#172334" stroke-width="7" paint-order="stroke"/>
+  <use href="#r" x="42" y="46" fill="#efad48" stroke="#172334" stroke-width="4" paint-order="stroke"/>
+  <use href="#r" x="16" y="10" fill="#f5ce78" stroke="#172334" stroke-width="7" paint-order="stroke"/>
 </svg>
