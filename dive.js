@@ -220,7 +220,11 @@
   };
   const ledgeTop = (side, x) => { for (let m = 360; m < 560; m += 1) if (rock(side, side ? w - x : x, m)) return depthY(m); return depthY(560); };
   const layout = () => {
-    w = dive.clientWidth; h = dive.clientHeight; dpr = Math.min(2, devicePixelRatio || 1);
+    w = dive.clientWidth; h = dive.clientHeight;
+    // Every frame repaints the whole canvas, so the cost follows its pixel count. Large high-DPI desktop windows
+    // (?view=krillion) took 100-300 ms a frame and the sea flickered; cap the backing store and let CSS scale it.
+    // Phones (390x844 at 2x is about 1.3 MP) stay below the cap and keep full sharpness.
+    dpr = Math.min(2, devicePixelRatio || 1, Math.sqrt(2.4e6 / Math.max(1, w * h)));
     canvas.width = fxCanvas.width = Math.round(w * dpr); canvas.height = fxCanvas.height = Math.round(h * dpr);
     ctx.font = FONT; CW = ctx.measureText('M').width || 4.8; CH = 8;
     chipY = h * .44;
