@@ -6,7 +6,7 @@
   const q = new URLSearchParams(location.search);
   window.BSX_DEV_FRAME = true; // the wrapper normally refuses to run inside a frame
   localStorage.setItem("XSRF.Token", "demo-xsrf");
-  const preset = { theme: q.get("bsxtheme") || "dark", gradescope: true, ed: { on: true, token: "demo-token", region: "us", map: {} } };
+  const preset = { theme: q.get("bsxtheme") || "dark", wideCards: Boolean(q.get("bsxwide")), gradescope: true, ed: { on: true, token: "demo-token", region: "us", map: {} } };
   const read = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
   window.chrome = {
     storage: { local: {
@@ -48,6 +48,9 @@
   Object.defineProperty(HTMLImageElement.prototype, "src", { configurable: true, enumerable: srcProp.enumerable, get() { return srcProp.get.call(this); }, set(v) { srcProp.set.call(this, imageFor(String(v))); } });
   const setAttr = Element.prototype.setAttribute;
   Element.prototype.setAttribute = function (name, value) { return setAttr.call(this, name, this instanceof HTMLImageElement && String(name).toLowerCase() === "src" ? imageFor(String(value)) : value); };
+  // Demo-only layout fixes, added to the wrapper shadow root once it exists.
+  const DEMO_CSS = "/* Canvas dashboard cards are a fixed 262px wide (canvas-lms dashboard_card.scss); Wide Cards keeps its 380px+ columns. */\n.app:not([data-wide=\"on\"]) .cards { grid-template-columns: repeat(auto-fill, 262px); justify-content: start; }\n.app[data-wide=\"on\"] .cards { grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr)); }\n/* Like Canvas: when two cards do not fit, one card fills the row. */\n@media (max-width: 620px) { .app[data-wide] .cards { grid-template-columns: minmax(0, 1fr) !important; } }\n/* Too narrow for menu + page + sidebar: the sidebar moves below the page, and the grade total moves above the grades. */\n@media (max-width: 1180px) { .layout { flex-wrap: wrap; } .layout > .right { width: 100%; flex: 1 0 100%; } .totalbox.top { display: block; } .right .totalbox { display: none; } }\n/* Rows of controls wrap, and wide tables scroll sideways instead of spilling out of the page. */\n.content .row { flex-wrap: wrap; } select.pick { max-width: 100%; }\n/* The page column never grows past the frame; long headings wrap. */\n.layout { max-width: 100%; box-sizing: border-box; } .layout > .content { min-width: 0 !important; max-width: 100%; }\n.dhead { flex-wrap: wrap; min-width: 0; } .content h1 { white-space: normal !important; overflow-wrap: anywhere; min-width: 0; max-width: 100%; }\n.content .row > * { min-width: 0; max-width: 100%; }\n@media (max-width: 760px) { .content select.pick { width: 100%; } .content .row { gap: 8px; } }\n@media (max-width: 760px) { table.grid { display: block; overflow-x: auto; } }";
+  setInterval(() => { const r = document.getElementById("bsx-root")?.shadowRoot; if (r && !r.getElementById("bsx-demo-css")) { const s = document.createElement("style"); s.id = "bsx-demo-css"; s.textContent = DEMO_CSS; r.append(s); } }, 100);
   // Record whether the wrapper rendered, for automated checks.
   setTimeout(() => {
     const r = document.getElementById("bsx-root")?.shadowRoot;

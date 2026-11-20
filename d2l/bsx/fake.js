@@ -19,13 +19,16 @@ function termCode(date = new Date()) {
   return m >= 8 ? `${y + 1}10` : m <= 5 ? `${y}20` : `${y}30`;
 }
 const T = termCode();
+const TERM_SEASON = (() => { const m = new Date().getMonth() + 1; return m >= 8 ? 'Fall' : m <= 5 ? 'Spring' : 'Summer'; })();
+const TERM_YEAR = String(new Date().getFullYear());
+const TERM = TERM_SEASON + ' ' + TERM_YEAR;
 
 const COURSES = [
-  { id: 101, name: 'Fall 2026 CS 25100-LE1 LEC - Data Structures and Algorithms', code: `wl.${T}.CS.25100.LE1`, system: 'Points', hw: 'Project', tool: 'Gradescope', final: false },
-  { id: 102, name: 'Fall 2026 MA 26100 - Multivariate Calculus', code: `wl.${T}.MA.26100.050`, system: 'Weighted', hw: 'Homework', tool: 'MyLab Math', final: true },
-  { id: 103, name: 'Fall 2026 STAT 35000 - Introduction to Statistics', code: `wl.${T}.STAT.35000.130`, system: 'Weighted', hw: 'Homework', tool: null, final: false },
-  { id: 104, name: 'Fall 2026 ENGL 10600 - First-Year Composition', code: `wl.${T}.ENGL.10600.Y12`, system: 'Points', hw: 'Essay', tool: null, final: true },
-  { id: 105, name: 'Fall 2026 PHYS 17200 - Modern Mechanics', code: `wl.${T}.PHYS.17200.001`, system: 'Points', hw: 'Lab Report', tool: 'WebAssign', final: false },
+  { id: 101, name: TERM + ' CS 25100-LE1 LEC - Data Structures and Algorithms', code: `wl.${T}.CS.25100.LE1`, system: 'Points', hw: 'Project', tool: 'Gradescope', final: false },
+  { id: 102, name: TERM + ' MA 26100 - Multivariate Calculus', code: `wl.${T}.MA.26100.050`, system: 'Weighted', hw: 'Homework', tool: 'MyLab Math', final: true },
+  { id: 103, name: TERM + ' STAT 35000 - Introduction to Statistics', code: `wl.${T}.STAT.35000.130`, system: 'Weighted', hw: 'Homework', tool: null, final: false },
+  { id: 104, name: TERM + ' ENGL 10600 - First-Year Composition', code: `wl.${T}.ENGL.10600.Y12`, system: 'Points', hw: 'Essay', tool: null, final: true },
+  { id: 105, name: TERM + ' PHYS 17200 - Modern Mechanics', code: `wl.${T}.PHYS.17200.001`, system: 'Points', hw: 'Lab Report', tool: 'WebAssign', final: false },
   { id: 201, name: 'Purdue Civics Literacy', code: 'wl.nc.civics.2', system: 'Points', hw: 'Module', tool: null, final: false, extra: true },
   { id: 202, name: '2026 Orientation Programs', code: 'wl.nc.2026Purdue102Fall', system: 'Points', hw: 'Task', tool: null, final: false, extra: true },
 ];
@@ -61,14 +64,14 @@ function build(c) {
       Id: c.id * 100 + i, CategoryId: null, Name: `${c.hw} ${i}`,
       CustomInstructions: rich(`<p>Complete <strong>${c.hw} ${i}</strong> and upload one PDF.</p><ul><li>Show your work.</li><li>Late work loses 10% per day.</li></ul><p>See the <a href="https://example.edu/rubric">rubric</a>.</p>`),
       Attachments: i % 2 ? [{ FileId: i, FileName: `${c.hw.toLowerCase().replace(/ /g, '-')}-${i}.pdf`, Size: 184320 }] : [],
-      TotalFiles: 0, UnreadFiles: 0, FlaggedFiles: 0, TotalUsers: 0, TotalUsersWithSubmissions: 0, TotalUsersWithFeedback: 0, Availability: null, IsHidden: false,
+      TotalFiles: 0, UnreadFiles: 0, FlaggedFiles: 0, TotalUsers: 0, TotalUsersWithSubmissions: 0, TotalUsersWithFeedback: 0, Availability: i === n && !c.extra ? { StartDate: at(due - 5, 8, 0), EndDate: null } : null, IsHidden: false,
       Assessment: { ScoreDenominator: max, Rubrics: i % 2 ? [rubric(c.id * 100 + i, max)] : [] }, DropboxType: 2, GroupTypeId: null, DueDate: at(due), DisplayInCalendar: true, NotificationEmail: null,
       LinkAttachments: [], ActivityId: '', IsAnonymous: false, SubmissionType: 0, CompletionType: 0, AllowableFileType: 0, CustomAllowableFileTypes: null,
       GradeItemId: gid, AllowOnlyUsersWithSpecialAccess: null, SubmissionsRule: 2,
     });
     items.push(item(gid, `${c.hw} ${i}`, max, cat.hw, 30 / n));
     // One piece of STAT homework is left unsubmitted and ungraded, to exercise "overdue".
-    if (due < -3 && !(c.id === 103 && i === 4)) values.push(value(gid, `${c.hw} ${i}`, score(i, max), max, c.system === 'Weighted' ? 30 / n : null));
+    if (due < -3 && !(c.id === 101 && i === 4)) values.push(value(gid, `${c.hw} ${i}`, score(i, max), max, c.system === 'Weighted' ? 30 / n : null));
   }
   const nq = c.extra ? 0 : 5;
   for (let i = 1; i <= nq; i++) {
@@ -217,7 +220,7 @@ function submissions(c, d, folderId) {
   if (due > now + 5 * DAY) return []; // furthest-out work: nothing yet
   if (due > now) return [{ Entity: {}, Status: 2, Feedback: null, Submissions: [{ Id: 1, SubmissionDate: null, Comment: rich(''), Files: [] }], CompletionDate: null }];
   const graded = d.values.find((v) => v.GradeObjectIdentifier === String(f.GradeItemId));
-  if (!graded && (f.Id % 2 || f.Id === 10304)) return []; // some recent work left unsubmitted
+  if (!graded && (f.Id % 2 || f.Id === 10104)) return []; // some recent work left unsubmitted
   return [{
     Entity: { DisplayName: 'Student One', EntityId: 42, EntityType: 'User', Active: true }, Status: graded ? 3 : 1,
     Feedback: graded ? {
@@ -267,9 +270,9 @@ function handle(pathname, query) {
   if (!(r = rest.match(/^le\/[\d.]+\/(.*)$/))) return json(null);
   const p = r[1];
   if (p === 'overdueItems/myItems') {
-    const d = DATA.get(103);
+    const d = DATA.get(101);
     if (!d) return json({ Objects: [], Next: null });
-    return json({ Objects: [{ UserId: 42, OrgUnitId: 103, ItemId: d.folders[3].Id, ItemName: d.folders[3].Name, DueDate: d.folders[3].DueDate }], Next: null });
+    return json({ Objects: [{ UserId: 42, OrgUnitId: 101, ItemId: d.folders[3].Id, ItemName: d.folders[3].Name, DueDate: d.folders[3].DueDate }], Next: null });
   }
   if (p === 'calendar/events/myEvents/') {
     const ids = (query.get('orgUnitIdsCSV') || '').split(',').map(Number);
@@ -324,7 +327,7 @@ function gradescope(path) {
   };
   if (path === '/account') {
     return `<html><body><div id="account-show"><h1 class="pageHeading">Your Courses</h1><div class="courseList">
-      <div class="courseList--term">Fall 2026</div><div class="courseList--coursesForTerm">
+      <div class="courseList--term">${TERM}</div><div class="courseList--coursesForTerm">
         <a class="courseBox" href="/courses/555"><h3 class="courseBox--shortname">wl.${T}.CS.25100.LE1</h3><div class="courseBox--name">Data Structures and Algorithms</div><div class="courseBox--assignments">4 assignments</div></a>
         <a class="courseBox" href="/courses/556"><h3 class="courseBox--shortname">Some Other Course</h3><div class="courseBox--name">Unrelated</div><div class="courseBox--assignments">1 assignment</div></a>
       </div></div></div></body></html>`;
@@ -354,8 +357,8 @@ function ed(path) {
   };
   if (path === '/api/user') {
     return { user: { id: 9, name: 'Student One' }, courses: [
-      { course: { id: 777, code: 'CS 251', name: 'Data Structures and Algorithms', year: '2026', session: 'Fall', status: 'active', features: { lessons: true } }, role: { role: 'student' } },
-      { course: { id: 778, code: 'ECE 100', name: 'Robotics Club', year: '2026', session: 'Fall', status: 'active', features: { lessons: true } }, role: { role: 'student' } },
+      { course: { id: 777, code: 'CS 251', name: 'Data Structures and Algorithms', year: TERM_YEAR, session: TERM_SEASON, status: 'active', features: { lessons: true } }, role: { role: 'student' } },
+      { course: { id: 778, code: 'ECE 100', name: 'Robotics Club', year: TERM_YEAR, session: TERM_SEASON, status: 'active', features: { lessons: true } }, role: { role: 'student' } },
     ] };
   }
   if (path === '/api/courses/777/lessons') {
