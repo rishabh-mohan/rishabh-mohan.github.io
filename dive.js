@@ -85,36 +85,43 @@
     ...[[-3, -3], [-8, -6], [-13, -9], [-18, -12], [-23, -15], [-28, -17]].map(([x, y]) => [x, y, '`', tones[3]]),
     ...[[-4, 1], [-9, 1], [-14, 0]].map(([x, y]) => [x, y, '-', tones[2]]),
   ];
-  // The big krill: krillion.io's curled krill shape, redrawn as a hand-made ASCII cell map (facing left).
-  // # body, e eye, a antenna, l leg. Shading is worked out per cell: lit from the upper left, brighter
-  // toward the middle of the body, with darker seams between the abdomen segments.
+  // The big krill (facing left) as an ASCII cell map. Shape and shading come from OpenKrillion's krill
+  // (scripts/pixel-art.mjs, shrimp('red')) with its witch hat left out, sampled onto this grid:
+  //   OpenKrillion, https://github.com/VulcanEon/openkrillion.com-service
+  //   MIT License, Copyright (c) 2026 OpenKrillion contributors. Permission is hereby granted, free of charge,
+  //   to any person obtaining a copy of this software ... to deal in the Software without restriction.
+  //   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. (Full text: the repo's LICENSE.)
+  // 0-4 body shade (0 = outline/seam, 4 = highlight), e eye, a antenna / rostrum / tail-fan edge, l leg.
   const KRILL_MAP = [
-    '       aaaaaaa',
-    '     aa       aa',
-    '    a   aaaaaa  a',
-    '   a  aa      aa a',
-    '  a  a          a',
-    '  a a    ######',
-    ' a a  ###########',
-    ' a  ##############',
-    '   ####e############',
-    '  #####ee############',
-    '   ###################',
-    '    ####  l l ########',
-    '     l l  l l   #######',
-    '    l l  l  l    ######',
-    '  ##      l      ######',
-    ' ####            ######',
-    ' #####          ######',
-    '  ######      #######',
-    '   ######################'.slice(0, 22),
-    '    ################',
-    '      ############',
+    '        aaaaaaa',
+    '     aaaa',
+    '   aaa      aaaaaa',
+    '  aa   aaaaaa',
+    ' aa  aaa',
+    ' a aaa',
+    ' a a aaaaaaaa',
+    ' a aaa',
+    ' aa aa',
+    '  aaaaa   01333333',
+    ' aaaa34411133333333',
+    '  aa334e333233333222',
+    'aaaaaa33222221011222',
+    '  aaaa22222201333332',
+    'aaaaaa000132303333332',
+    '       ll0l1311010102',
+    '       l l l323333322',
+    '      llll l333333220',
+    '      l l l3321111220',
+    '   a0003 33331332102',
+    '  a3aa33333333322222',
+    ' a0033a33201222221',
+    ' aaaaa3a222010222',
+    '   aaa0100002122',
   ];
   const KRILL_COLS = Math.max(...KRILL_MAP.map(r => r.length)), KRILL_ROWS = KRILL_MAP.length;
   const KRILL_CELLS = (() => {
     const at = (i, j) => (KRILL_MAP[j] || '')[i] || ' ';
-    const body = (i, j) => at(i, j) === '#' || at(i, j) === 'e';
+    const body = (i, j) => /[0-4e]/.test(at(i, j));
     const cells = [];
     for (let j = 0; j < KRILL_ROWS; j++) for (let i = 0; i < KRILL_COLS; i++) {
       const c = at(i, j);
@@ -129,8 +136,9 @@
       let depth = 0;
       while (depth < 3 && [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([di, dj]) => body(i + di * (depth + 1), j + dj * (depth + 1)))) depth++;
       const lit = (body(i - 1, j) ? 0 : .22) + (body(i, j - 1) ? 0 : .26) - (body(i + 1, j) ? 0 : .14) - (body(i, j + 1) ? 0 : .22);
-      const seam = (i > 13 && j > 8 && j < 17 && j % 3 === 2) || (j > 16 && i > 7 && i % 3 === 1) ? -.18 : 0;
-      cells.push({ i, j, eye: c === 'e', v: clamp(.38 + depth * .12 + lit + seam) });
+      // Shade from the source pixels, softened a little by the cell's own lighting.
+      const src = c === 'e' ? 3 : +c;
+      cells.push({ i, j, eye: c === 'e', v: clamp(src / 4 * .75 + lit * .5 + depth * .04 + .05) });
     }
     return cells;
   })();
@@ -245,7 +253,7 @@
   const addBubble = (x, y, fast) => bubbles.push({ x, y, c: pick(['o', 'o', '°', 'O', '.']), v: fast ? rand(110, 210) : rand(36, 72), ph: rand(0, 6) });
 
   // ---------- State ----------
-  let cam = 0, tween = null, phase = 'idle', chipShown = false, swarm = null, last = 0, t = 0;
+  let cam = 0, tween = null, phase = 'idle', chipShown = false, swarm = null, scatter = 0, last = 0, t = 0;
   const mascotIdle = () => [10, h * .7];
   let mascot = { x: 0, y: 0, tx: 0, ty: 0 };
 
@@ -457,6 +465,21 @@
       }
       drawKrill(fx, mascot.x + 62, mascot.y + 26 + Math.sin(t * 2.4) * 4, 84, PINK, swarm !== null, '#14040c');
     }
+    // After landing, the swarm lingers about a second, then spreads outward and fades over 1.5 s.
+    if (swarm && (phase === 'landed' || phase === 'counting')) {
+      const k = clamp((t - scatter - 1) / 1.5);
+      if (k >= 1) swarm = null;
+      else {
+        const grow = .62 + k * k * 6;
+        fx.font = `600 10px ${SPRITE}`; fx.globalAlpha = 1 - k;
+        for (const s of swarm) {
+          const a = s.a + t * s.v, right = -Math.sin(a) * s.v > 0;
+          fx.fillStyle = s.c;
+          fx.fillText(right ? '~)>' : '<(~', w / 2 + Math.cos(a) * s.rx * grow - 8, chipY + Math.sin(a) * s.ry * grow - 6);
+        }
+        fx.globalAlpha = 1;
+      }
+    }
     // Lines light up as the answer sinks past them.
     if (chipShown) for (const el of tiers) el.classList.toggle('lit', el._y - cam < chipY + 4);
     if (running) requestAnimationFrame(draw);
@@ -546,7 +569,7 @@
     at(s += 150, () => { dive.classList.add('sinking'); tween = { from: 0, to: camEnd, start: performance.now(), dur: 4300 }; });
     // Landing: banner pops where the answer was, the gold krill flips in, then the counters run.
     at(s += 4300, () => {
-      chipShown = false; swarm = null; phase = 'landed';
+      chipShown = false; scatter = t; phase = 'landed';
       dive.classList.remove('playing', 'zap', 'chip-in', 'sinking', 'gone'); dive.classList.add('landing');
     });
     at(s += 900, () => {
