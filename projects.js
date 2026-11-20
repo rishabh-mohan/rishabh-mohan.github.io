@@ -5,18 +5,18 @@ const labelsFor = project => project.sections || sections;
 const projects = [
   {
     name: 'Brightspace Canvas Wrapper',
-    tagline: 'A Firefox extension that gives Brightspace a Canvas-style dashboard.',
+    tagline: 'A Chrome and Firefox extension that gives Brightspace a Canvas-style dashboard.',
     detail: [
       'I built a Canvas-style dashboard for Brightspace so I could see courses, grades, assignments, and the calendar in one place.',
       'Try two sample classes and see how an ungraded assignment could change your grade.',
       'The dashboard grew to include what-if grades alongside optional Gradescope and Ed Discussion integrations.',
-      'A Firefox extension combines Brightspace course data with its own dashboard and optional integrations.',
+      'A Chrome and Firefox extension combines Brightspace course data with its own dashboard and optional integrations.',
       'It brings the information I check most often into one view, from upcoming due dates to grade scenarios.',
-      'Find the extension source and setup instructions on GitHub.'
+      'Install from the Chrome Web Store or Firefox Add-ons, or explore the source on GitHub.'
     ],
     image: ['brightspace-demo-dashboard.webp', 'Brightspace dashboard with course cards and upcoming assignments', 1200, 708],
     demo: 'grades',
-    links: [['GitHub', 'https://github.com/rishabh-mohan/brightspace-canvas-wrapper']]
+    links: [['Chrome Web Store', 'https://chromewebstore.google.com/detail/brightspace-canvas-wrappe/ediicphlmlkiglmhnmfdkinefbnbckbp'], ['Firefox Add-ons', 'https://addons.mozilla.org/en-US/firefox/addon/brightspace-canvas-wrapper/'], ['GitHub', 'https://github.com/rishabh-mohan/brightspace-canvas-wrapper']]
   },
   {
     name: 'd31 + Pack Studio',

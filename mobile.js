@@ -11,6 +11,7 @@ const posts = [];
 
   // Top projects: the first four in projects.js.
   root.querySelector('.project-list').append(...projects.slice(0, 4).map((project, i) => {
+    const more = mobileProjectDetails[project.name];
     const card = el('article', { className: 'project' },
       el('p', { className: 'kicker', textContent: `PROJECT ${String(i + 1).padStart(2, '0')}` }),
       el('h3', { textContent: project.name }),
@@ -21,7 +22,14 @@ const posts = [];
     } else if (project.art) {
       card.append(el('figure', { className: 'media' }, el('pre', { textContent: project.art, role: 'img', ariaLabel: project.artAlt || project.name })));
     }
-    card.append(el('p', { className: 'body', textContent: project.detail[0] }), links(project.links));
+    card.append(el('p', { className: 'body', textContent: more?.summary || project.detail[0] }));
+    if (more) {
+      card.append(
+        el('ul', { className: 'tags project-stack', ariaLabel: 'Technologies' }, ...more.stack.map(text => el('li', { textContent: text }))),
+        el('ul', { className: 'project-highlights body' }, ...more.highlights.map(text => el('li', { textContent: text })))
+      );
+    }
+    card.append(links(project.links));
     return card;
   }));
 
@@ -53,6 +61,11 @@ const posts = [];
     const [, name, what] = /^(.+?) \((.+)\)$/.exec(item) || [, item, ''];
     return el('li', {}, el('span', { className: 'role', textContent: name }), what ? el('span', { className: 'org', textContent: ` ${what}` }) : '');
   });
+  builds.push(...mobileAdditionalProjects.map(project => el('li', {},
+    el('p', { className: 'role', textContent: project.name }),
+    el('p', { className: 'body', textContent: project.description }),
+    ...(project.links.length ? [links(project.links)] : [])
+  )));
   root.querySelector('.resume').append(
     block('Experience', el('ol', { className: 'timeline' }, job(resume[1]), job(resume[4]))),
     block('Skills', ...skills),

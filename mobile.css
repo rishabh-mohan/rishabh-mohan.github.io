@@ -184,6 +184,11 @@
   .media img { display: block; width: 100%; height: auto; max-height: 280px; object-fit: contain; }
   .media pre { margin: 0; padding: 10px; font: 13px/1.25 "IBM Plex Mono", ui-monospace, monospace; color: var(--m-muted2); overflow-x: auto; }
   #mobile .project .body { margin-bottom: 18px; }
+  #mobile .project-stack { margin-bottom: 16px; }
+  #mobile .project-highlights { padding-left: 20px; }
+  #mobile .project-highlights li + li { margin-top: 10px; }
+  #mobile .plain .body { margin-top: 8px; }
+  #mobile .plain .links { margin-top: 14px; }
   .links { display: flex; flex-wrap: wrap; gap: 16px; margin: 0; padding: 4px 4px 6px; }
 
   /* Resume. */
