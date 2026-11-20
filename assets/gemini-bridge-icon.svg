@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <title>Gemini Bridge: a terminal prompt whose cursor is a sparkle</title>
+  <title>Gemini Bridge: a terminal prompt whose &gt; is a sparkle, followed by an underscore cursor</title>
   <defs>
     <linearGradient id="spark" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#4796e3"/>
@@ -8,6 +8,6 @@
   </defs>
   <rect width="128" height="128" rx="24" fill="#131314"/>
   <rect x="1.5" y="1.5" width="125" height="125" rx="22.5" fill="none" stroke="#2a2b2e" stroke-width="3"/>
-  <path d="M28 40L56 64L28 88" fill="none" stroke="#e3e3e3" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M90 52Q94 76 118 80Q94 84 90 108Q86 84 62 80Q86 76 90 52Z" fill="url(#spark)"/>
+  <path d="M46 30Q50 58 78 62Q50 66 46 94Q42 66 14 62Q42 58 46 30Z" fill="url(#spark)"/>
+  <rect x="80" y="83" width="32" height="11" rx="5.5" fill="#e3e3e3"/>
 </svg>
