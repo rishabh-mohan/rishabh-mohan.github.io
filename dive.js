@@ -85,17 +85,77 @@
     ...[[-3, -3], [-8, -6], [-13, -9], [-18, -12], [-23, -15], [-28, -17]].map(([x, y]) => [x, y, '`', tones[3]]),
     ...[[-4, 1], [-9, 1], [-14, 0]].map(([x, y]) => [x, y, '-', tones[2]]),
   ];
-  const drawKrill = (g, x, y, tones, flip, eye = '#14040c', k = 1) => {
-    solid(g, KRILL_BODY.map(p => ({ ...p, x: p.x * k, y: p.y * k, rx: p.rx * k, ry: p.ry * k })), x, y, tones, { flip, fx: 3.6, fy: 4.8, font: 6 });
-    marks(g, krillMarks(tones, eye).map(([mx, my, ch, c]) => [mx * k, my * k, ch, c]), x, y, flip, Math.round(8 * k));
+  // The big krill: krillion.io's curled krill shape, redrawn as a hand-made ASCII cell map (facing left).
+  // # body, e eye, a antenna, l leg. Shading is worked out per cell: lit from the upper left, brighter
+  // toward the middle of the body, with darker seams between the abdomen segments.
+  const KRILL_MAP = [
+    '       aaaaaaa',
+    '     aa       aa',
+    '    a   aaaaaa  a',
+    '   a  aa      aa a',
+    '  a  a          a',
+    '  a a    ######',
+    ' a a  ###########',
+    ' a  ##############',
+    '   ####e############',
+    '  #####ee############',
+    '   ###################',
+    '    ####  l l ########',
+    '     l l  l l   #######',
+    '    l l  l  l    ######',
+    '  ##      l      ######',
+    ' ####            ######',
+    ' #####          ######',
+    '  ######      #######',
+    '   ######################'.slice(0, 22),
+    '    ################',
+    '      ############',
+  ];
+  const KRILL_COLS = Math.max(...KRILL_MAP.map(r => r.length)), KRILL_ROWS = KRILL_MAP.length;
+  const KRILL_CELLS = (() => {
+    const at = (i, j) => (KRILL_MAP[j] || '')[i] || ' ';
+    const body = (i, j) => at(i, j) === '#' || at(i, j) === 'e';
+    const cells = [];
+    for (let j = 0; j < KRILL_ROWS; j++) for (let i = 0; i < KRILL_COLS; i++) {
+      const c = at(i, j);
+      if (c === ' ') continue;
+      if (c === 'a' || c === 'l') {
+        const n = (di, dj) => at(i + di, j + dj) === c;
+        const flat = n(-1, 0) || n(1, 0), tall = n(0, -1) || n(0, 1);
+        const line = c === 'l' ? '/' : flat && !tall ? '-' : tall && !flat ? '|' : n(1, -1) || n(-1, 1) ? '/' : n(-1, -1) || n(1, 1) ? '\\' : '`';
+        cells.push({ i, j, line, tone: c === 'a' ? 3 : 2 });
+        continue;
+      }
+      let depth = 0;
+      while (depth < 3 && [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([di, dj]) => body(i + di * (depth + 1), j + dj * (depth + 1)))) depth++;
+      const lit = (body(i - 1, j) ? 0 : .22) + (body(i, j - 1) ? 0 : .26) - (body(i + 1, j) ? 0 : .14) - (body(i, j + 1) ? 0 : .22);
+      const seam = (i > 13 && j > 8 && j < 17 && j % 3 === 2) || (j > 16 && i > 7 && i % 3 === 1) ? -.18 : 0;
+      cells.push({ i, j, eye: c === 'e', v: clamp(.38 + depth * .12 + lit + seam) });
+    }
+    return cells;
+  })();
+  // Draws the krill centred on (cx, cy), `height` css px tall.
+  const drawKrill = (g, cx, cy, height, tones, flip, eye = '#14040c') => {
+    const fy = height / KRILL_ROWS, fx = fy * .75, ox = cx - KRILL_COLS * fx / 2, oy = cy - height / 2;
+    const X = i => ox + (flip ? KRILL_COLS - 1 - i : i) * fx;
+    g.fillStyle = tones[0];
+    for (const c of KRILL_CELLS) if (!c.line) g.fillRect(X(c.i) - .2, oy + c.j * fy - .2, fx + .4, fy + .4);
+    g.font = `700 ${(fy * 1.2).toFixed(2)}px ${SPRITE}`;
+    for (const c of KRILL_CELLS) {
+      const x = X(c.i), y = oy + c.j * fy;
+      if (c.line) { g.fillStyle = tones[c.tone]; g.fillText(flip ? (FLIP[c.line] || c.line) : c.line, x, y); continue; }
+      if (c.eye) { g.fillStyle = tones[3]; g.fillRect(x, y, fx, fy); g.fillStyle = eye; g.fillText('@', x, y); continue; }
+      g.fillStyle = tones[1 + Math.round(c.v * 3)];
+      g.fillText(FILL_RAMP[1 + Math.round(c.v * (FILL_RAMP.length - 2))], x, y);
+    }
   };
   // The result badge: the same krill in gold, drawn once into its own canvas (2x for crisp glyphs).
   const badge = document.createElement('canvas');
-  badge.width = 300; badge.height = 120; badge.style.width = '150px'; badge.style.height = '60px';
+  badge.width = 240; badge.height = 200; badge.style.width = '120px'; badge.style.height = '100px';
   dive.querySelector('.badge').replaceChildren(badge);
   const drawBadge = () => {
-    const g = badge.getContext('2d'); g.setTransform(2, 0, 0, 2, 0, 0); g.clearRect(0, 0, 150, 60); g.textBaseline = 'top';
-    drawKrill(g, 50, 30, GOLD, false, '#2a1800', 1.55);
+    const g = badge.getContext('2d'); g.setTransform(2, 0, 0, 2, 0, 0); g.clearRect(0, 0, 120, 100); g.textBaseline = 'top';
+    drawKrill(g, 60, 50, 92, GOLD, false, '#2a1800');
   };
 
   // Fish: body, tail and a fin; small and big.
@@ -395,7 +455,7 @@
           fx.fillText(right ? '~)>' : '<(~', w / 2 + Math.cos(a) * s.rx - 8, chipY + Math.sin(a) * s.ry - 6);
         }
       }
-      drawKrill(fx, mascot.x + 40, mascot.y + 26 + Math.sin(t * 2.4) * 4, PINK, swarm !== null, '#14040c', 1.4);
+      drawKrill(fx, mascot.x + 62, mascot.y + 26 + Math.sin(t * 2.4) * 4, 84, PINK, swarm !== null, '#14040c');
     }
     // Lines light up as the answer sinks past them.
     if (chipShown) for (const el of tiers) el.classList.toggle('lit', el._y - cam < chipY + 4);
