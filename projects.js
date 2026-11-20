@@ -7,11 +7,11 @@ const projects = [
     name: 'Brightspace Canvas Wrapper',
     tagline: 'A Chrome and Firefox extension that gives Brightspace a Canvas-style dashboard.',
     detail: [
-      'I built a Canvas-style dashboard for Brightspace so I could see courses, grades, assignments, and the calendar in one place.',
+      'A browser extension that brings courses, deadlines and grades into one Canvas-style dashboard for Brightspace students. Available for Chrome and Firefox.',
       'Try two sample classes and see how an ungraded assignment could change your grade.',
-      'The dashboard grew to include what-if grades alongside optional Gradescope and Ed Discussion integrations.',
-      'A Chrome and Firefox extension combines Brightspace course data with its own dashboard and optional integrations.',
-      'It brings the information I check most often into one view, from upcoming due dates to grade scenarios.',
+      'Coursework is often spread across several sites. The wrapper brings Brightspace, Gradescope and Ed Discussion together, combining matching assignments to avoid duplicate reminders.',
+      'The JavaScript extension uses an existing school sign-in to show course modules, pinned resources, file submissions and discussion replies in one interface.',
+      'Students can plan ahead with a shared calendar and estimate grade outcomes with what-if scores that account for dropped assignments.',
       'Install from the Chrome Web Store or Firefox Add-ons, or explore the source on GitHub.'
     ],
     image: ['brightspace-demo-dashboard.webp', 'Brightspace dashboard with course cards and upcoming assignments', 1200, 708],
@@ -22,11 +22,11 @@ const projects = [
     name: 'd31 + Pack Studio',
     tagline: 'A life-sim engine whose scenarios are all JSON, plus an Android pack editor.',
     detail: [
-      'I wanted a version of 31-Day Mode whose scenarios could be changed without rewriting the game.',
+      'A life-sim game and companion Android editor built for creating new campaigns. The playable prototype separates the simulation from its content, so creators can change the world without rewriting the game.',
       'Try a short, simplified turn to see how an activity trades time for a stat.',
-      'The 31-Day Mode rebuild and its Android pack editor grew into companion projects.',
-      'The Dart and Flutter engine reads calendars, locations, items, and branching events from JSON. Pack Studio validates packs with the same engine.',
-      'A campaign can be authored as data and run without an engine change.',
+      'Inspired by 31-Day Mode, the simulation balances study, work and rest against time, money and stamina. Branching encounters respond to choices and game state.',
+      'The Dart and Flutter engine loads editable JSON content packs. Pack Studio provides forms for characters, locations and events, with automatic saving and validation by the same engine that runs the game.',
+      'Creators can start from an example campaign, add artwork and colors, and build a new scenario without changing engine code.',
       'Explore the game engine and the companion editor.'
     ],
     image: ['d31-gameplay.webp', 'd31 gameplay showing the schedule and activity choices', 466, 960],
@@ -38,11 +38,11 @@ const projects = [
     name: 'rr-scraper',
     tagline: 'A CLI that saves Royal Road stories as TXT, PDF, or EPUB.',
     detail: [
-      'I wanted to take Royal Road stories offline and read them in the format that suited me.',
+      'A terminal tool for taking Royal Road stories offline. Search by title or paste a story link, then export a book in the format that suits your reader.',
       'Choose a sample book format and preview the resulting filename.',
-      'The tool covers both finding a story by title and opening a story directly by URL.',
-      'A Node.js CLI collects chapters and exports TXT, PDF, or EPUB.',
-      'An export turns a serialized story into a single file for offline reading.',
+      'Serialized fiction can span hundreds of web pages. The exporter gathers chapters into a whole book or smaller chapter groups for offline reading.',
+      'Node.js and Playwright collect visible chapter text and export TXT, PDF or EPUB. Chapter retries, protected file writes and reruns that skip completed exports help recover from interrupted downloads.',
+      'Readers can choose a format for their device on Windows or macOS, with automatic first-run setup. Exports focus on text rather than illustrations or page styling.',
       'See the CLI source, usage, and the available export formats.'
     ],
     image: ['rr-scraper-demo-still.svg', 'Terminal replay of a Royal Road story export', 650, 520],
@@ -54,11 +54,11 @@ const projects = [
     name: 'Gemini Bridge',
     tagline: 'Use a Gemini Enterprise web account as a terminal coding agent, no API key needed.',
     detail: [
-      'Gemini Bridge lets me use my school’s Gemini Enterprise web account as a coding agent in the terminal.',
+      'A bridge from browser-based Gemini Enterprise accounts to terminal coding tools. Built to make Purdue’s existing AI access usable in a coding workflow without a separate API key.',
       'Point OpenCode at the bridge, pick a model with /models, and it reads and edits files like any coding agent.',
       'Purdue offers Gemini Enterprise in the browser, but students don’t get an API key to use it from coding tools.',
-      'A Python server mimics the OpenAI API and relays each request through a signed-in Chromium window. Tool use is emulated through the chat.',
-      'Any OpenAI-compatible tool can reach the models my school already offers, from Gemini to Claude.',
+      'A Python server exposes an OpenAI-compatible interface backed by a signed-in browser. It supports chat-emulated tool calls, image and PDF attachments, queued requests, cancellation and timeouts.',
+      'Developers can use their organization’s available models inside OpenCode with the normal sign-in flow. This is an independent project, not an official Google integration.',
       'Find the setup steps, supported models, and launcher on GitHub.'
     ],
     art: 'local client\n    |\n    v\n[ bridge.py ]  --->  Gemini',
@@ -72,10 +72,10 @@ const projects = [
     sections: ['This Site', 'D30 Mode', 'rr-scraper', 'Gemini Bridge', 'Brightspace Wrapper', 'Pack Studio'],
     detail: [
       'This portfolio: six windows you can rearrange, framed by ASCII scenery that changes theme on every shuffle.',
-      'A clean-room Flutter simulation engine with an editable JSON content pack: 321 branching events and 10,755 nodes, checked by 27 automated tests and 200 seeded runs.',
-      'Exports Royal Road stories as TXT, bookmarked PDF, or EPUB 3, with retries, atomic writes, and 9 automated tests.',
+      'A playable Flutter life-sim with branching encounters and editable campaigns. Pack Studio makes those campaigns easier to create on Android.',
+      'Take Royal Road stories offline as TXT, PDF or EPUB, with chapter grouping and recovery from interrupted downloads.',
       'An OpenAI-compatible server that relays coding-agent requests through a signed-in Gemini Enterprise browser window.',
-      'A Firefox extension that gives Brightspace a Canvas-style dashboard, with what-if grades and optional Gradescope and Ed Discussion integrations.',
+      'A Chrome and Firefox extension that brings courses, deadlines and what-if grades together, with optional Gradescope and Ed Discussion integrations.',
       'An Android editor that validates d31 content packs with the same engine the game uses. Find all of these on GitHub.'
     ],
     art: '+---+ +---+ +---+\n| 1 | | 2 | | 3 |\n+---+ +---+ +---+\n| 4 | | 5 | | 6 |\n+---+ +---+ +---+',

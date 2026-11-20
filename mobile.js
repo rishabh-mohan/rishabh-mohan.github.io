@@ -22,7 +22,7 @@ const posts = [];
     } else if (project.art) {
       card.append(el('figure', { className: 'media' }, el('pre', { textContent: project.art, role: 'img', ariaLabel: project.artAlt || project.name })));
     }
-    card.append(el('p', { className: 'body', textContent: more?.summary || project.detail[0] }));
+    card.append(el('p', { className: 'body', textContent: project.detail[0] }));
     if (more) {
       card.append(
         el('ul', { className: 'tags project-stack', ariaLabel: 'Technologies' }, ...more.stack.map(text => el('li', { textContent: text }))),
