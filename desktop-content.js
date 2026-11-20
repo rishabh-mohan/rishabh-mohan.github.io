@@ -256,7 +256,7 @@ const desktopBlocks = {
     // This Site
     [
       ['stats', [['5', 'desktop themes'], ['6', 'swappable windows'], ['1', 'Krillion-style mobile dive']]],
-      ['list', ['Forest, Space, Mountains, Postmodern and Snowdrift scenery, each drawn as shaded ASCII on one canvas.', 'Mobile opens with a “Name a SWE” dive, inspired by krillion.io with the creator’s permission.', 'Next: a reading list for rr-scraper and more demos.']]
+      ['list', ['Forest, Space, Mountains, Postmodern and Snowdrift scenery, each drawn as shaded ASCII on one canvas.', 'Mobile opens with a “Name a CS Student” dive, inspired by krillion.io with the creator’s permission.', 'Next: a reading list for rr-scraper and more demos.']]
     ],
     // d31
     [

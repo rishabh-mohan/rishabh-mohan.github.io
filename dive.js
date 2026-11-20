@@ -1,4 +1,4 @@
-// Mobile opening: a Krillion-style "Name a SWE" dive.
+// Mobile opening: a Krillion-style "Name a CS Student" dive.
 // The sea is a shaded ASCII field on a canvas, like the desktop scenery: every shape (clouds, sun, boat, rock
 // ledges and canyon walls, kelp, coral) is stamped into a grid of cells with a light value, then drawn as a glyph
 // from the same density ramp and a 5-tone palette. Solid materials get a dark cell fill so they read as mass.

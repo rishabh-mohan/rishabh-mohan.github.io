@@ -33,7 +33,7 @@
   #mobile section:not(.dive) { width: min(100% - 32px, 560px); margin: 0 auto 28px; }
   #mobile .dive p { margin: 0; }
 
-  /* ---------- Opening: Name a SWE ---------- */
+  /* ---------- Opening: Name a CS Student ---------- */
   /* --dive-h is the visible height (set by dive.js), so the opening fills the screen with or without the browser bar. */
   html.dive-lock, html.dive-lock body { overflow: hidden; overscroll-behavior: none; touch-action: none; }
   .dive { height: var(--dive-h, 100dvh); overflow: hidden; background: linear-gradient(#123d66, #050a14); }
@@ -82,7 +82,8 @@
   }
   .card::after { content: ""; position: absolute; inset: 0; opacity: .05; pointer-events: none; background: repeating-linear-gradient(0deg, transparent 0 2px, var(--m-text) 2px 3px); }
   .rnd { color: var(--m-pink); font-size: 14px; letter-spacing: 4px; }
-  .prompt { font-size: 31px; line-height: 1.05; margin: 8px 0 10px !important; text-shadow: 0 0 10px rgba(232,241,255,.3); }
+  /* Shrinks slightly below ~326px wide so "Name a CS Student" stays on one line. */
+  .prompt { font-size: min(31px, 9.5vw); line-height: 1.05; margin: 8px 0 10px !important; text-shadow: 0 0 10px rgba(232,241,255,.3); }
   .hint { font-size: 14px; letter-spacing: 2px; color: var(--m-muted); }
   .dock { position: absolute; z-index: 3; left: 8px; right: 8px; bottom: 22px; gap: 10px; align-items: center; }
   .sonar {
