@@ -142,9 +142,19 @@ function sectionBlocks(project, section, lazy = false) {
   return wrap;
 }
 
+// Small project icons before a window title (projects.js `icon`: one file or a list).
+function iconNodes(project) {
+  return [].concat(project.icon || []).map(file => {
+    const image = node('img', '', 'title-icon');
+    image.src = 'assets/' + file; image.alt = ''; image.width = 18; image.height = 18; image.decoding = 'async';
+    return image;
+  });
+}
+
 function paintCard(slot) {
   const card = grid.children[slot];
   const project = projects[order[slot]];
+  card.querySelector('.title-icons').replaceChildren(...iconNodes(project));
   const title = project.name + ' - ' + labelsFor(project)[slot];
   card.querySelector('h2').textContent = title;
   card.querySelector('button').setAttribute('aria-label', 'Expand ' + project.name);
@@ -172,7 +182,9 @@ function makeCard(slot) {
   const button = node('button', '↗');
   button.type = 'button';
   button.addEventListener('click', () => openProject(slot));
-  bar.append(title, grip, button);
+  const head = node('div', '', 'window-title');
+  head.append(node('span', '', 'title-icons'), title);
+  bar.append(head, grip, button);
   const preview = node('div', '', 'preview');
   preview.tabIndex = 0;
   preview.setAttribute('role', 'region');
@@ -397,6 +409,7 @@ function openProject(slot, pushHistory = true) {
   const incoming = [];
   openSlot = slot;
   document.querySelector('#expanded-title').textContent = project.name;
+  expandedIcons.replaceChildren(...iconNodes(project));
   labelsFor(project).forEach((label, index) => {
     const part = node('section');
     const sectionButton = node('button', label);
@@ -471,6 +484,15 @@ window.addEventListener('popstate', syncFromHash);
 supported.addEventListener('change', event => {
   if (!event.matches) { closeProject(); clearProjectHash(); endDrag(); }
 });
+
+// The expanded view's title gets the same icon slot as the grid windows.
+const expandedIcons = node('span', '', 'title-icons');
+{
+  const expandedTitle = document.querySelector('#expanded-title');
+  const head = node('div', '', 'window-title');
+  expandedTitle.replaceWith(head);
+  head.append(expandedIcons, expandedTitle);
+}
 
 projects.forEach((_, index) => { grid.append(makeCard(index)); paintCard(index); });
 

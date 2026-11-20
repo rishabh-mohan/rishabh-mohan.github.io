@@ -61,6 +61,7 @@ const projects = [
   },
   {
     name: 'Gemini Bridge',
+    icon: 'gemini-bridge-icon.svg',
     image: ['gemini-bridge-diagram.svg', 'OpenCode sends coding requests through a local Gemini Bridge to a signed-in Gemini Enterprise browser session; responses return to OpenCode.', 720, 400],
     tagline: 'Use a Gemini Enterprise web account as a terminal coding agent, no API key needed.',
     detail: [
