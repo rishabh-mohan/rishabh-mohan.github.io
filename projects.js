@@ -48,14 +48,13 @@ const projects = [
     tagline: 'A CLI that saves Royal Road stories as TXT, PDF, or EPUB.',
     detail: [
       'A terminal tool for taking Royal Road stories offline. Search by title or paste a story link, then export a book in the format that suits your reader.',
-      'Choose a sample book format and preview the resulting filename.',
+      'How to use it: run one command, answer four prompts, and the finished book lands in its own folder.',
       'Serialized fiction can span hundreds of web pages. The exporter gathers chapters into a whole book or smaller chapter groups for offline reading.',
       'The Node.js tool gathers chapters with Playwright and saves them as TXT, PDF or EPUB. If a download is interrupted, rerun it to retry missing exports while keeping completed files.',
       'Readers can choose a format for their device on Windows or macOS, with automatic first-run setup. Exports focus on text rather than illustrations or page styling.',
       'See the CLI source, usage, and the available export formats.'
     ],
     image: ['rr-scraper-demo-still.svg', 'Terminal replay of a Royal Road story export', 650, 520],
-    demo: 'export',
     reading: true,
     links: [['GitHub', 'https://github.com/rishabh-mohan/rr-scraper']]
   },

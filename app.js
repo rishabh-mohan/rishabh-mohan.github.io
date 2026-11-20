@@ -402,7 +402,6 @@ document.addEventListener('keydown', event => {
 
 function demoFor(project) {
   const demo = node('div', '', 'demo');
-  const out = node('output');
   if (project.demo === 'd31') {
     // d31 is a clean-room rebuild, so the demo points at the original game instead of a mock turn.
     const link = node('a', 'Korean Student Simulator on Google Play ↗');
@@ -410,15 +409,6 @@ function demoFor(project) {
     link.target = '_blank';
     link.rel = 'noopener';
     demo.append(node('p', 'd31 is a clean-room rebuild of Korean Student Simulator’s 31-Day Mode, by Basakansoft. Play the original:'), link);
-  } else if (project.demo === 'export') {
-    const label = node('label', 'Format ');
-    const format = node('select');
-    ['TXT', 'PDF', 'EPUB'].forEach(value => format.append(node('option', value)));
-    const update = () => { out.textContent = 'Example-story.' + format.value.toLowerCase(); };
-    format.addEventListener('change', update);
-    label.append(format);
-    demo.append(label, out);
-    update();
   } else {
     return null;
   }

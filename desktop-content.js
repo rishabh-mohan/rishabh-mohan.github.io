@@ -35,7 +35,7 @@ const sectionImages = {
     4: ['d31-studio-tiles.svg', 'Pack Studio facts: six colour presets, a Workshop template, saves as you edit, packs checked by the real engine', 720, 400]
   },
   'rr-scraper': {
-    1: ['rr-scraper-groups.svg', 'Terminal: rr-scraper saving a 109-chapter story as five PDFs of 25 chapters, skipping a file that already exists', 650, 461],
+    1: ['rr-scraper-walkthrough.svg', 'Walkthrough in six steps: run node chapter-scraper.js, enter a title or story link, pick a result, choose TXT, PDF or EPUB, choose chapters per file, then read the file in downloads', 720, 560],
     2: ['rr-scraper-chapters.svg', 'Diagram: 109 chapter web pages become one EPUB, or five PDFs of 25 chapters', 720, 400],
     3: ['rr-scraper-pipeline.svg', 'Diagram: search with Cheerio, read chapters with Playwright, write TXT, PDF or EPUB, save through a temporary .part file', 720, 400],
     4: ['rr-scraper-retry.svg', 'Terminal: a chapter fails three times, its file is left unwritten, and a rerun skips the finished files and retries it', 650, 404]
@@ -186,17 +186,21 @@ const desktopBlocks = {
     // Intro
     [
       ['stats', [['3', 'formats: TXT, PDF, EPUB'], ['3', 'retries per chapter'], ['0', 'manual installs after Node.js']]],
-      ['h', 'Four prompts'],
-      ['steps', [
-        ['Find it.', 'Paste a story link or type a title and pick from the top results.'],
-        ['Pick a format.', 'TXT, PDF (the default) or EPUB.'],
-        ['Group chapters.', 'One book, or files of any number of chapters.'],
-        ['Read.', 'Files land in downloads/Title (fiction ID)/ and the folder opens.']
-      ]],
       ['tags', ['Node.js 22', 'Playwright', 'Cheerio', 'PDFKit', 'JSZip', 'Windows', 'macOS']]
     ],
-    // Demo
+    // Demo: a walkthrough of using the tool.
     [
+      ['h', 'Walkthrough'],
+      ['steps', [
+        ['Set up.', 'Install Node.js 22 or newer, download the repository, and open a terminal in its folder.'],
+        ['Run it.', 'node chapter-scraper.js. The first run installs the dependencies and Chromium, which can take a few minutes.'],
+        ['Find the story.', 'Type a title, or paste the story’s main Royal Road page (not a chapter page).'],
+        ['Pick a result.', 'A search lists the top matches with chapter counts and ratings. Press Enter for the first.'],
+        ['Choose a format.', 'TXT, PDF or EPUB. Press Enter for PDF.'],
+        ['Group chapters.', 'Press Enter for one file with every chapter, or type a number such as 25.'],
+        ['Read.', 'The files are saved in downloads/Title (fiction ID)/, and the folder opens when it’s done.'],
+        ['Rerun if needed.', 'Run it again with the same answers to retry anything that failed. Finished files are skipped.']
+      ]],
       ['code', 'downloads/\n  Mother of Learning (21220)/\n    Mother of Learning.epub        chapters 1-109\n\n  or, with 25 chapters per file:\n    Mother of Learning 001-025.pdf\n    Mother of Learning 026-050.pdf\n    ...', 'Where exports go'],
       ['p', 'The fiction ID in the folder name keeps two books with the same title apart.']
     ],
