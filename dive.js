@@ -516,6 +516,37 @@
   menu.addEventListener('click', event => { if (event.target.closest('a, button')) { menu.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); } });
   dive.querySelectorAll('.replay').forEach(btn => btn.addEventListener('click', () => { scrollTo({ top: 0 }); play(); }));
 
+  // DESCEND: an eased glide down to the projects instead of an instant jump. Any touch, wheel or key stops it.
+  // Reduced motion keeps the plain anchor jump.
+  const descend = dive.querySelector('.descend');
+  descend.addEventListener('click', event => {
+    const section = document.getElementById('m-projects');
+    if (!section || reduced) return;
+    event.preventDefault();
+    const anchor = section.previousElementSibling?.classList.contains('zone') ? section.previousElementSibling : section;
+    // Layout offsets ignore the reveal transform (translateY(24px) until the marker has been seen).
+    let top = 0; for (let n = anchor; n; n = n.offsetParent) top += n.offsetTop;
+    const from = scrollY, to = Math.max(0, Math.min(top - 12, document.documentElement.scrollHeight - innerHeight));
+    const dur = Math.min(1300, Math.max(650, Math.abs(to - from) * .7));
+    const t0 = performance.now();
+    let stopped = false;
+    const stop = () => { stopped = true; };
+    const opts = { passive: true, once: true };
+    addEventListener('wheel', stop, opts); addEventListener('touchstart', stop, opts); addEventListener('keydown', stop, opts);
+    const done = () => {
+      removeEventListener('wheel', stop); removeEventListener('touchstart', stop); removeEventListener('keydown', stop);
+      const title = section.querySelector('h2');
+      if (title) { title.tabIndex = -1; title.focus({ preventScroll: true }); }
+    };
+    const step = now => {
+      if (stopped) return done();
+      const k = Math.min(1, (now - t0) / dur), e = k < .5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
+      scrollTo(0, from + (to - from) * e);
+      if (k < 1) requestAnimationFrame(step); else done();
+    };
+    requestAnimationFrame(step);
+  });
+
   cam = camEnd; phase = 'done';
   if (reduced) { dive.querySelectorAll('.replay').forEach(btn => { btn.hidden = true; }); draw(performance.now()); return; }
   // Only animate while the opening is on screen.
