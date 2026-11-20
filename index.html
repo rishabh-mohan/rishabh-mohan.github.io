@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="mobile.css">
   <script defer src="projects.js"></script>
   <script defer src="mobile.js"></script>
+  <script defer src="dive.js"></script>
   <script defer src="corner-art.js"></script>
   <script defer src="postmodern-eye.js"></script>
   <script defer src="postmodern-ships.js"></script>
@@ -74,32 +75,19 @@
   <!-- Small screens: shown instead of .shell by mobile.css. -->
   <div id="mobile">
     <section class="dive" aria-labelledby="dive-title">
-      <div class="sea" aria-hidden="true">
-        <span class="sun"></span>
-        <svg class="cloud" style="--x:6%;--y:1.2%;--w:92px" viewBox="0 0 12 4" shape-rendering="crispEdges"><path fill="#fff" d="M4 0h3v1h2v1h3v2H0V2h2V1h2z"/><path fill="#d3ecfb" d="M0 3h12v1H0z"/></svg>
-        <svg class="cloud" style="--x:58%;--y:2.6%;--w:70px;--t:70s" viewBox="0 0 12 4" shape-rendering="crispEdges"><path fill="#fff" d="M4 0h3v1h2v1h3v2H0V2h2V1h2z"/><path fill="#d3ecfb" d="M0 3h12v1H0z"/></svg>
-        <svg class="cloud" style="--x:28%;--y:4.2%;--w:54px;--t:90s" viewBox="0 0 12 4" shape-rendering="crispEdges"><path fill="#fff" d="M4 0h3v1h2v1h3v2H0V2h2V1h2z"/><path fill="#d3ecfb" d="M0 3h12v1H0z"/></svg>
-        <svg class="boat" viewBox="0 0 20 12" shape-rendering="crispEdges"><path fill="#ff5d8f" d="M10 0h4v2h-4z"/><path fill="#0d1830" d="M9 0h1v5H9zM6 5h8v3H6zM0 8h20v1h-1v1h-1v1H3v-1H2V9H0z"/><path fill="#e8f1ff" d="M7 6h2v1H7zM11 6h2v1h-2z"/></svg>
-        <div class="kelps"></div>
-        <div class="fish"></div>
-        <span class="mark" style="--d:100">-100m</span><span class="mark" style="--d:200">-200m</span><span class="mark" style="--d:300">-300m</span>
-        <span class="mark" style="--d:400">-400m</span><span class="mark" style="--d:500">-500m</span><span class="mark" style="--d:600">-600m</span>
-        <span class="mark" style="--d:700">-700m</span><span class="mark" style="--d:800">-800m</span><span class="mark" style="--d:900">-900m</span>
-        <span class="mark" style="--d:1000">-1,000m</span><span class="mark" style="--d:1100">-1,100m</span>
-        <span class="note" style="--d:120">the light thins out</span>
-        <span class="note" style="--d:480">THE TWILIGHT ZONE</span>
-        <span class="note" style="--d:820">no sunlight past here</span>
-        <span class="tier" style="--d:300;--c:#7d93b8">SOLID PICK · 40</span>
-        <span class="tier" style="--d:640;--c:#b18cff">DEEP CUT · 85</span>
-        <span class="tier" style="--d:1000;--c:#ffd166">ONE IN A KRILLION · 100</span>
-      </div>
-      <div class="bubbles" aria-hidden="true"></div>
+      <canvas class="scene" aria-hidden="true"></canvas>
+      <div class="world" aria-hidden="true"></div>
       <div class="chip" aria-hidden="true">“RISHABH MOHAN” <span>▼</span></div>
       <div class="hud" aria-hidden="true">
         <div class="pod"><small>DEPTH</small><b class="depth">1,000m</b></div>
         <div class="hud-mid"><span class="dots"><i></i></span><small>PROMPT 1 OF 1</small></div>
         <div class="pod right"><small>SCORE</small><b class="score">100</b></div>
       </div>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="dive-menu" aria-label="Menu"><i></i><i></i><i></i></button>
+      <nav class="menu" id="dive-menu" aria-label="Sections" hidden>
+        <a href="#m-projects">Top projects</a><a href="#m-resume">Resume</a><a href="#m-blog">Blog</a>
+        <button class="replay" type="button">↻ Dive again</button>
+      </nav>
       <h1 id="dive-title" class="visually-hidden">Name a SWE: Rishabh Mohan, the Krillion.</h1>
       <div class="card" aria-hidden="true">
         <p class="rnd">PROMPT 1 OF 1</p>
@@ -108,22 +96,17 @@
       </div>
       <div class="dock" aria-hidden="true">
         <span class="sonar"><span class="timer">25</span></span>
-        <span class="input-col"><span class="answer"><span class="typed">Rishabh Mohan</span><span class="caret"></span></span><span class="fuse"></span></span>
+        <span class="input-col"><span class="answer"><span class="typed">Rishabh Mohan</span><span class="caret"></span><span class="placeholder">type one answer…</span></span><span class="fuse"></span></span>
         <span class="dive-btn">DIVE</span>
       </div>
       <div class="landed" aria-hidden="true">
-        <svg class="badge" viewBox="0 0 16 10" shape-rendering="crispEdges">
-          <path fill="#ffd166" d="M3 3h9v1h2v1h1v1h-1v1h-2v1H3V7H1V6h1V4h1z"/>
-          <path fill="#ffe9a8" d="M4 4h7v1H4z"/>
-          <path fill="#050a14" d="M12 5h1v1h-1z"/>
-          <path fill="#ffd166" d="M13 2h1v1h-1zM14 1h1v1h-1zM4 8h1v2H4zM7 8h1v2H7zM10 8h1v2h-1zM0 2h1v1h1v1H1V3H0z"/>
-        </svg>
+        <span class="badge"></span>
         <p class="title">ONE IN A KRILLION</p>
         <p class="who">“Rishabh Mohan”</p>
         <p class="pts"><span>+100 PTS</span> · sink 1,000m</p>
         <p class="fact">Purdue CS ’30. Builds things.</p>
-        <span class="you">YOU ◂</span>
       </div>
+      <span class="you" aria-hidden="true">YOU ◂</span>
       <a class="descend" href="#m-projects">DESCEND ▼</a>
       <p class="credit"><button class="replay" type="button">↻ dive again</button> · inspired by <a href="https://krillion.io/">krillion.io</a></p>
       <div class="crt" aria-hidden="true"></div>
