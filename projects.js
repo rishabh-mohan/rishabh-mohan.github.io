@@ -36,7 +36,7 @@ const projects = [
     gallery: [
       ['d31-gameplay.webp', 'd31: schedule and activity choices', 466, 960],
       ['pack-studio-screenshot.webp', 'Pack Studio: create or open a content pack', 457, 960],
-      ['pack-studio-editor.webp', 'Pack Studio: edit locations, traits, characters, books and items', 1080, 2400]
+      ['pack-studio-editor.webp', 'Pack Studio: edit locations, traits, characters, books and items', 1080, 2288]
     ],
     demo: 'd31',
     links: [['d31 on GitHub', 'https://github.com/rishabh-mohan/d31'], ['Pack Studio on GitHub', 'https://github.com/rishabh-mohan/pack-studio']]
