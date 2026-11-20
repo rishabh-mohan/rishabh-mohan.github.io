@@ -55,7 +55,13 @@ const projects = [
       'See the CLI source, usage, and the available export formats.'
     ],
     image: ['rr-scraper-demo-still.svg', 'Terminal replay of a Royal Road story export', 650, 520],
-    reading: true,
+    // Currently Reading: [title, author, Goodreads page, cover in assets/].
+    reading: [
+      ['Mother of Learning', 'Domagoj Kurmaić', 'https://www.goodreads.com/book/show/59661342', 'books/mother-of-learning.webp'],
+      ['Atomic Habits', 'James Clear', 'https://www.goodreads.com/book/show/40121378', 'books/atomic-habits.webp'],
+      ['Dungeon Crawler Carl: A Parade of Horribles', 'Matt Dinniman', 'https://www.goodreads.com/book/show/228928465', 'books/parade-of-horribles.webp'],
+      ['Incendiaries: Advanced Improvised Explosives', 'Seymour Lecker', 'https://www.goodreads.com/book/show/2470797', 'books/incendiaries.webp']
+    ],
     links: [['GitHub', 'https://github.com/rishabh-mohan/rr-scraper']]
   },
   {

@@ -253,6 +253,12 @@ html.dragging, html.dragging * { cursor: grabbing !important; user-select: none;
 .block-tags li { border: 1px solid var(--edge); padding: .05rem .4rem; font-size: .9em; color: var(--text); }
 #project-content .blocks { font-size: .92rem; gap: .9rem; }
 #project-content .block-fig img { max-height: 28rem; }
+/* rr-scraper's Currently Reading: a small cover to the left of each title, both linking to Goodreads. */
+.reading-list { list-style: none; margin: .35rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.reading-list a { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: .6rem; align-items: center; text-decoration: none; }
+.reading-list img { grid-row: span 2; display: block; width: 24px; height: 36px; object-fit: cover; border: 1px solid var(--media-edge); }
+.reading-list .book-title { text-decoration: underline; line-height: 1.3; }
+.reading-list .book-author { color: var(--muted); font-size: .85em; }
 .cursor::after { content: '▌'; color: var(--accent); }
 #forest { pointer-events: none; position: fixed; inset: 0; width: 100%; height: 100%; }
 /* An icon-only toggle keeps the pair narrow enough to stay clear of the postmodern eye. */

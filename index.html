@@ -18,7 +18,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preload" href="assets/fonts/ibm-plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/instrument-serif-italic.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=reading1">
   <!-- The small-screen condition lives on the link, so ?view=krillion can switch the mobile page on at any size. -->
   <link rel="stylesheet" href="mobile.css?v=krill1" id="mobile-css" media="(max-width: 899px), (max-height: 639px), (max-aspect-ratio: 5/4)">
   <script>if (/[?&]view=krillion\b/.test(location.search)) { document.documentElement.classList.add('krill-view'); document.getElementById('mobile-css').media = 'all'; }</script>
@@ -31,7 +31,7 @@
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches || /^#cam=/.test(location.hash);
     if (!still && (html.classList.contains('krill-view') || (small && !seen))) { html.classList.add('dive-lock'); scrollTo(0, 0); }
   })();</script>
-  <script defer src="projects.js?v=rrwalk1"></script>
+  <script defer src="projects.js?v=reading1"></script>
   <script defer src="mobile-content.js?v=23ada5171386"></script>
   <script defer src="mobile.js?v=145531274a2d"></script>
   <script defer src="dive.js?v=dprcap1"></script>
@@ -39,8 +39,8 @@
   <script defer src="postmodern-eye.js"></script>
   <script defer src="postmodern-ships.js"></script>
   <script defer src="theme-icon.js"></script>
-  <script defer src="desktop-content.js?v=rrwalk1"></script>
-  <script defer src="app.js?v=rrwalk1"></script>
+  <script defer src="desktop-content.js?v=reading1"></script>
+  <script defer src="app.js?v=reading1"></script>
 </head>
 <body>
   <canvas id="forest" aria-hidden="true"></canvas>

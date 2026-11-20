@@ -421,7 +421,22 @@ function appendSectionExtras(target, project, section) {
     if (demo) target.append(demo);
   }
   if (section === 4 && project.reading) {
-    target.append(node('h3', 'Currently Reading'), node('p', 'Reading list coming soon.'));
+    const list = node('ul', '', 'reading-list');
+    project.reading.forEach(([title, author, href, cover]) => {
+      const item = node('li');
+      const link = node('a');
+      link.href = href;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.setAttribute('aria-label', title + ' by ' + author + ' on Goodreads');
+      const image = node('img');
+      image.src = 'assets/' + cover; image.alt = ''; image.width = 24; image.height = 36;
+      image.decoding = 'async'; image.loading = 'lazy';
+      link.append(image, node('span', title, 'book-title'), node('span', author, 'book-author'));
+      item.append(link);
+      list.append(item);
+    });
+    target.append(node('h3', 'Currently Reading'), list);
   }
   if (section === 5 && project.links) {
     const links = node('ul');
