@@ -40,7 +40,7 @@
   .dive::after { content: ""; position: absolute; inset: 0; z-index: 6; background: #ffe58a; opacity: 0; pointer-events: none; mix-blend-mode: overlay; }
   .crt { position: absolute; inset: 0; z-index: 5; pointer-events: none;
     background: repeating-linear-gradient(0deg, rgba(0,0,0,.2) 0 1px, transparent 1px 3px), radial-gradient(at 50% 45%, transparent 55%, rgba(2,4,10,.75)); }
-  .scene { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; image-rendering: pixelated; image-rendering: crisp-edges; }
+  .scene { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
   .world { position: absolute; left: 0; right: 0; top: 0; z-index: 1; pointer-events: none; will-change: transform; }
   .mark { position: absolute; right: 16px; transform: translateY(-50%); font-size: 12px; color: var(--m-muted); opacity: .75; }
   .note { position: absolute; transform: translateY(-50%); font-size: 13px; letter-spacing: 1px; color: var(--m-muted); opacity: 0; transition: opacity .5s; white-space: nowrap; }
@@ -109,10 +109,9 @@
   .chip span { color: var(--m-gold); font-size: 16px; }
 
   /* Result */
-  .landed { position: absolute; z-index: 3; top: calc(44% - 82px); left: 0; right: 0; margin: 0 auto; width: min(100% - 32px, 420px); text-align: center; }
+  .landed { position: absolute; z-index: 3; top: calc(44% - 112px); left: 0; right: 0; margin: 0 auto; width: min(100% - 32px, 420px); text-align: center; }
   .landed::before { content: ""; position: absolute; z-index: -1; left: 50%; top: -34px; width: 130px; height: 130px; margin-left: -65px; background: radial-gradient(closest-side, rgba(255,209,102,.45), transparent); animation: m-breathe 2.6s var(--m-smooth) infinite; }
-  .badge { display: inline-block; width: 52px; height: 52px; margin-bottom: 12px; filter: drop-shadow(0 0 6px rgba(255,209,102,.8)); animation: m-bob 2.6s ease-in-out infinite; }
-  .badge svg { display: block; width: 100%; height: 100%; }
+  .badge { display: inline-block; margin-bottom: 10px; white-space: pre; text-align: left; font-size: 20px; line-height: .9; color: var(--m-gold); text-shadow: 0 0 10px rgba(255,209,102,.8); animation: m-bob 2.6s ease-in-out infinite; }
   .title { font-size: 33px; letter-spacing: 3px; color: var(--m-gold); text-shadow: 0 0 22px rgba(255,209,102,.8), 0 3px 0 #000; }
   .who { font-size: 19px; margin: 6px 0 10px !important; }
   .pts { font-size: 22px; }

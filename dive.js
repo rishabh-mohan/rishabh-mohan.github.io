@@ -1,85 +1,74 @@
 // Mobile opening: a Krillion-style "Name a SWE" dive.
-// The sea is pixel art drawn on a low-res canvas (one art pixel = P css px); labels and lines live in .world,
-// which moves with the same camera. Plays once per session, tap to skip, "dive again" replays.
+// The sea is drawn on a canvas, and everything in it (krill, boat, clouds, kelp, coral, fish, rocks, bubbles) is
+// homemade ASCII set in VT323. Labels and lines live in .world, which moves with the same camera.
+// Plays once per session, tap to skip, "dive again" replays.
 (() => {
   const dive = document.querySelector('#mobile .dive');
   if (!dive) return;
-  const P = 3, MPX = 2, SURF = 160; // art pixel size, css px per metre, waterline (css px from top)
+  const MPX = 2, SURF = 160, FONT = '"VT323", ui-monospace, monospace'; // css px per metre, waterline (css px from top)
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canvas = dive.querySelector('.scene'), ctx = canvas.getContext('2d');
-  const world = dive.querySelector('.world'), chip = dive.querySelector('.chip');
+  const world = dive.querySelector('.world');
   const depthEl = dive.querySelector('.depth'), scoreEl = dive.querySelector('.score');
   const typed = dive.querySelector('.typed'), answer = dive.querySelector('.answer'), timer = dive.querySelector('.timer');
   const diveBtn = dive.querySelector('.dive-btn'), name = typed.textContent;
   const depthY = m => SURF + m * MPX; // css px in world space
   const rand = (a, b) => a + Math.random() * (b - a);
+  const pick = list => list[Math.random() * list.length | 0];
 
-  // ---------- Sprites ----------
-  // Our own krill: curled, facing left. Letters are palette keys; '.' is empty.
-  const KRILL = [
-    'a..............',
-    '.a..aa.........',
-    '..aa..oooo.....',
-    '....oobhhbo....',
-    '...obhhbbsbo...',
-    '..oebbbbsbbbo..',
-    '..obbbbsbbsbo..',
-    '...oobbsbbsbbo.',
-    '..l.l.oobsbbbo.',
-    '.l.l.l..obsbo..',
-    '........obbo...',
-    '......oobbo....',
-    '.....otttoo....',
-    '....ot.t.to....',
-    '.....o...o.....',
+  // ---------- ASCII art ----------
+  const KRILL_L = [
+    ' \\\\ ___',
+    '=(o  ``-.',
+    '  `-,,,_ )',
+    "    ///-'",
   ];
-  const PINK = { o: '#7d1d3c', b: '#ff5d8f', h: '#ffc2d4', e: '#1a0610', a: '#ff9fbc', l: '#c23a66', s: '#d63f70', t: '#ff9fbc' };
-  const GOLD = { o: '#8a5a12', b: '#ffd166', h: '#fff1b8', e: '#2a1a00', a: '#ffe9a8', l: '#c9962e', s: '#e0a83a', t: '#ffe9a8' };
-  const drawSprite = (map, pal, x, y, flip) => map.forEach((row, j) => [...row].forEach((c, i) => {
-    if (c === '.') return;
-    ctx.fillStyle = pal[c]; ctx.fillRect(Math.round(x + (flip ? map[0].length - 1 - i : i)), Math.round(y + j), 1, 1);
-  }));
-  // Gold badge for the result, as crisp SVG rects.
-  dive.querySelector('.badge').innerHTML = `<svg viewBox="0 0 ${KRILL[0].length} ${KRILL.length}" shape-rendering="crispEdges">${
-    KRILL.flatMap((row, j) => [...row].map((c, i) => c === '.' ? '' : `<rect x="${i}" y="${j}" width="1" height="1" fill="${GOLD[c]}"/>`)).join('')}</svg>`;
+  const KRILL_R = [
+    '    ___ //',
+    "  .-''  o)=",
+    ' ( _,,,-`',
+    " `-\\\\\\",
+  ];
+  const SUN = ['\\ | /', '-( )-', '/ | \\'];
+  const CLOUDS = [
+    ['    .--.', ' .-(    )-.', "(___.__)__.)"],
+    ['   _  _', ' _( )( )_', '(___..___)'],
+    ['  .-.', ' (   ).', '(___(__)'],
+  ];
+  const BOAT = ['  ___|___', '  \\_o_o_/'];
+  const CORAL = [' \\|/ \\|/', '  \\Y/ \\|', '   \\| /', '    |/', '   _|_'];
+  const FISH = { r: ['><>', '><((°>'], l: ['<><', '<°))><'] };
+  const ROCK = '#%@%#:%#@:.';
+  dive.querySelector('.badge').textContent = KRILL_L.join('\n');
+
+  const art = (lines, x, y, color, size = 16, lh = size * .9) => {
+    ctx.font = `${size}px ${FONT}`; ctx.fillStyle = color;
+    lines.forEach((line, i) => ctx.fillText(line, x, y + i * lh));
+  };
 
   // ---------- Scene layout (rebuilt on resize) ----------
-  let W = 0, H = 0, w = 0, h = 0, camEnd = 0, chipY = 0;
+  let w = 0, h = 0, camEnd = 0, chipY = 0, dpr = 1;
   let clouds = [], kelp = [], coral = [], fish = [], snow = [], walls = [];
-  const cloudSprite = (cw, ch) => { // union of circles, flat-ish bottom, shaded underside
-    const blobs = Array.from({ length: 5 }, (_, i) => [cw * (.15 + i * .17) + rand(-2, 2), ch * rand(.45, .7), ch * rand(.35, .6)]);
-    const px = [];
-    for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
-      if (!blobs.some(([bx, by, r]) => (x - bx) ** 2 + ((y - by) * 1.4) ** 2 < r * r) || y > ch * .85) continue;
-      px.push([x, y, y > ch * .62 ? 1 : 0]);
-    }
-    return px;
-  };
   const layout = () => {
-    w = dive.clientWidth; h = dive.clientHeight;
-    W = Math.ceil(w / P); H = Math.ceil(h / P);
-    canvas.width = W; canvas.height = H;
+    w = dive.clientWidth; h = dive.clientHeight; dpr = Math.min(2, devicePixelRatio || 1);
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
     chipY = h * .44;
     camEnd = depthY(1000) - chipY;
-    clouds = [[.02, 8, 64, 16], [.55, 20, 52, 13], [.3, 34, 44, 11]].map(([fx, y, cw, ch]) => ({ x: fx * W, y, px: cloudSprite(cw, ch), speed: rand(.4, .9) }));
-    kelp = Array.from({ length: 16 }, (_, i) => {
-      const left = i % 2 === 0;
-      return { x: left ? rand(-2, W * .22) : rand(W * .72, W - 4), base: (depthY(380) + rand(-40, 30)) / P, len: rand(55, 140) | 0, back: i % 3 === 0, phase: rand(0, 6) };
+    clouds = CLOUDS.map((lines, i) => ({ lines, x: [.04, .5, .26][i] * w, y: [30, 62, 98][i], speed: rand(1.5, 3) }));
+    kelp = Array.from({ length: 14 }, (_, i) => {
+      const left = i % 2 === 0, back = i % 3 === 0;
+      return { x: left ? rand(-6, w * .2) : rand(w * .74, w - 20), base: depthY(385) + rand(-30, 30), rows: rand(14, 34) | 0, back, phase: rand(0, 6) };
     }).sort((a, b) => b.back - a.back);
-    coral = [];
-    for (const [cx, base, size] of [[W * .1, depthY(395) / P, 22], [W * .85, depthY(385) / P, 28], [W * .7, depthY(1150) / P, 20], [W * .2, depthY(1170) / P, 18]]) {
-      const branch = (x, y, ang, len, depth) => {
-        for (let k = 0; k < len; k++) coral.push([Math.round(x + Math.cos(ang) * k), Math.round(y - Math.sin(ang) * k), base > depthY(800) / P]);
-        if (depth > 0) for (const turn of [-.5, .45]) branch(x + Math.cos(ang) * len, y - Math.sin(ang) * len, ang + turn + rand(-.2, .2), len * .68, depth - 1);
-      };
-      branch(cx, base, Math.PI / 2, size * .45, 3);
-    }
-    fish = Array.from({ length: 9 }, (_, i) => ({ x: rand(0, W), y: (i < 6 ? depthY(rand(20, 330)) : depthY(rand(650, 1150))) / P, v: rand(4, 11) * (i % 2 ? 1 : -1), deep: i >= 6 }));
-    snow = Array.from({ length: 90 }, () => ({ x: rand(0, W), y: rand(SURF, depthY(1300)) / P, v: rand(.6, 2) }));
-    // Rock walls below 600m: smoothed noise per art row.
-    const rows = Math.ceil((depthY(1400) - depthY(600)) / P);
-    let a = 6, b = 6;
-    walls = Array.from({ length: rows }, () => { a = Math.max(2, Math.min(18, a + rand(-1.2, 1.2))); b = Math.max(2, Math.min(18, b + rand(-1.2, 1.2))); return [a, b]; });
+    coral = [[w * .04, depthY(395), false], [w * .66, depthY(390), false], [w * .62, depthY(1175), true], [w * .1, depthY(1190), true]];
+    fish = Array.from({ length: 9 }, (_, i) => ({ x: rand(0, w), y: i < 6 ? depthY(rand(25, 330)) : depthY(rand(650, 1150)), v: rand(12, 34) * (i % 2 ? 1 : -1), big: Math.random() < .35, deep: i >= 6 }));
+    snow = Array.from({ length: 70 }, () => ({ x: rand(0, w), y: rand(SURF, depthY(1300)), v: rand(2, 6) }));
+    // Rock walls below 600m: a row of ASCII every 12px, width wandering slowly.
+    let a = 4, b = 4;
+    walls = Array.from({ length: Math.ceil((depthY(1400) - depthY(600)) / 12) }, () => {
+      a = Math.max(1, Math.min(8, a + rand(-.8, .8))); b = Math.max(1, Math.min(8, b + rand(-.8, .8)));
+      const row = n => Array.from({ length: Math.round(n) }, (_, k) => ROCK[(k * 3 + (Math.random() * 3 | 0)) % ROCK.length]).join('');
+      return [row(a), row(b)];
+    });
   };
 
   // ---------- Colours ----------
@@ -90,20 +79,14 @@
     return c0.map((c, k) => Math.round(c + (c1[k] - c) * f));
   };
   const rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
-  const band = m => water(Math.floor(m / 25) * 25 + 12); // posterised into 25 m slabs
 
   // ---------- Bubbles ----------
   let bubbles = [];
-  const addBubble = (x, y, fast) => bubbles.push({ x, y, r: Math.random() < .35 ? 2 : 1, v: fast ? rand(35, 70) : rand(12, 24), ph: rand(0, 6) });
-  const ring = (x, y, r) => {
-    x = Math.round(x); y = Math.round(y);
-    if (r === 1) { ctx.fillRect(x, y - 1, 1, 1); ctx.fillRect(x, y + 1, 1, 1); ctx.fillRect(x - 1, y, 1, 1); ctx.fillRect(x + 1, y, 1, 1); return; }
-    ctx.fillRect(x - 1, y - 2, 3, 1); ctx.fillRect(x - 1, y + 2, 3, 1); ctx.fillRect(x - 2, y - 1, 1, 3); ctx.fillRect(x + 2, y - 1, 1, 3);
-  };
+  const addBubble = (x, y, fast) => bubbles.push({ x, y, c: pick(['o', 'o', '°', 'O']), v: fast ? rand(110, 210) : rand(36, 72), ph: rand(0, 6) });
 
   // ---------- State ----------
   let cam = 0, tween = null, phase = 'idle', chipShown = false, swarm = null, last = 0, t = 0;
-  const mascotIdle = () => [8, H * .7];
+  const mascotIdle = () => [12, h * .68];
   let mascot = { x: 0, y: 0, tx: 0, ty: 0 };
 
   const draw = now => {
@@ -114,103 +97,102 @@
       if (k === 1) tween = null;
     }
     world.style.transform = `translate3d(0,${-cam}px,0)`;
-    const camA = cam / P, surf = SURF / P;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+    const surf = SURF - cam;
 
-    // Sky and water, row by row.
-    for (let y = 0; y < H; y++) {
-      const wy = y + camA;
-      if (wy < surf) {
-        const f = Math.floor(wy / surf * 10) / 10;
-        ctx.fillStyle = rgb([120 + 106 * f, 190 + 53 * f, 232 + 18 * f].map(Math.round));
-      } else ctx.fillStyle = rgb(band((wy - surf) * P / MPX));
-      ctx.fillRect(0, y, W, 1);
+    // Sky and water in flat bands (water posterised into 25 m slabs).
+    for (let y = 0; y < h; y += 6) {
+      const wy = y + cam;
+      if (wy < SURF) {
+        const f = Math.floor(wy / SURF * 10) / 10;
+        ctx.fillStyle = rgb([74 + 70 * f, 160 + 50 * f, 222 + 22 * f].map(Math.round));
+      } else ctx.fillStyle = rgb(water(Math.floor((wy - SURF) / MPX / 25) * 25 + 12));
+      ctx.fillRect(0, y, w, 6);
     }
-    // Sun and clouds.
-    if (camA < surf) {
-      const sx = W * .8, sy = 16 - camA;
-      ctx.fillStyle = 'rgba(255,229,138,.18)'; ctx.beginPath(); ctx.arc(sx, sy, 15, 0, 7); ctx.fill();
-      ctx.fillStyle = 'rgba(255,229,138,.3)'; ctx.beginPath(); ctx.arc(sx, sy, 11, 0, 7); ctx.fill();
-      ctx.fillStyle = '#ffe58a'; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, 7); ctx.fill();
+    // Surface: sun, clouds, boat and waves.
+    if (surf > 0) {
+      const sx = w * .64, sy = 74 - cam;
+      ctx.fillStyle = 'rgba(255,229,138,.22)'; ctx.beginPath(); ctx.arc(sx, sy, 40, 0, 7); ctx.fill();
+      art(SUN, sx - 20, sy - 22, '#ffd84a', 18, 15);
       for (const c of clouds) {
-        const cx = Math.round(((c.x + t * c.speed) % (W + 80)) - 40), cy = Math.round(c.y - camA);
-        for (const [x, y, s] of c.px) { ctx.fillStyle = s ? '#d4e6f2' : '#fff'; ctx.fillRect(cx + x, cy + y, 1, 1); }
+        const cx = ((c.x + t * c.speed) % (w + 140)) - 70;
+        art(c.lines.slice(0, -1), cx, c.y - cam, '#fff', 17, 14);
+        art(c.lines.slice(-1), cx, c.y - cam + (c.lines.length - 1) * 14, '#cfe6f6', 17, 14);
       }
-      // Waves and boat.
-      for (let x = 0; x < W; x++) {
-        const wy = Math.round(surf - camA + Math.sin(x * .09 + t * 1.6) * .8);
-        ctx.fillStyle = 'rgb(68,148,199)'; ctx.fillRect(x, wy, 1, 1);
-      }
-      const bx = Math.round(W * .2), by = Math.round(surf - camA + Math.sin(t * 2) * .6) - 6;
-      ctx.fillStyle = '#ff5d8f'; ctx.fillRect(bx + 4, by - 6, 3, 2);
-      ctx.fillStyle = '#0d1830'; ctx.fillRect(bx + 3, by - 6, 1, 5); ctx.fillRect(bx + 2, by - 1, 6, 2); ctx.fillRect(bx - 3, by + 1, 16, 2); ctx.fillRect(bx - 2, by + 3, 14, 1);
-      ctx.fillStyle = '#e8f1ff'; ctx.fillRect(bx + 3, by, 1, 1); ctx.fillRect(bx + 6, by, 1, 1);
+      const bx = w * .2, by = surf - 34 + Math.sin(t * 2) * 1.2;
+      art(['     |'], bx, by - 14, '#0d1830', 17, 14);
+      art(['      >'], bx, by - 15, '#ff5d8f', 17, 14);
+      art(BOAT, bx, by, '#0d1830', 17, 14);
+      ctx.font = `16px ${FONT}`; ctx.fillStyle = '#5aa5d6';
+      const wave = ".-'``'-.", cw = 7, shift = (t * 14) % (wave.length * cw);
+      let row = ''; for (let i = 0; i < w / cw + wave.length * 2; i++) row += wave[i % wave.length];
+      ctx.fillText(row, -shift, surf - 9);
     }
     // Light rays.
-    for (const [fx, wd] of [[.12, 7], [.32, 11], [.52, 6], [.7, 10], [.9, 7]]) {
-      const x0 = W * fx + Math.sin(t * .4 + fx * 9) * 3, y0 = surf - camA, len = 150;
-      const g = ctx.createLinearGradient(0, y0, 0, y0 + len); g.addColorStop(0, 'rgba(200,235,255,.09)'); g.addColorStop(1, 'rgba(200,235,255,0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + wd, y0); ctx.lineTo(x0 + wd + 34, y0 + len); ctx.lineTo(x0 + 34, y0 + len); ctx.fill();
+    for (const [fx, wd] of [[.12, 20], [.32, 32], [.52, 18], [.7, 30], [.9, 20]]) {
+      const x0 = w * fx + Math.sin(t * .4 + fx * 9) * 9, len = 450;
+      const g = ctx.createLinearGradient(0, surf, 0, surf + len); g.addColorStop(0, 'rgba(200,235,255,.08)'); g.addColorStop(1, 'rgba(200,235,255,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x0, surf); ctx.lineTo(x0 + wd, surf); ctx.lineTo(x0 + wd + 100, surf + len); ctx.lineTo(x0 + 100, surf + len); ctx.fill();
     }
     // Rock walls.
-    const wallTop = depthY(600) / P;
-    for (let y = 0; y < H; y++) {
-      const r = walls[Math.floor(y + camA - wallTop)];
-      if (!r) continue;
-      ctx.fillStyle = '#0a1830'; ctx.fillRect(0, y, Math.round(r[0] + 6), 1); ctx.fillRect(W - Math.round(r[1] + 6), y, Math.round(r[1] + 6), 1);
-      ctx.fillStyle = '#060f20'; ctx.fillRect(0, y, Math.round(r[0]), 1); ctx.fillRect(W - Math.round(r[1]), y, Math.round(r[1]), 1);
+    ctx.font = `15px ${FONT}`; ctx.fillStyle = '#1c3658';
+    const wallTop = depthY(600);
+    for (let i = Math.max(0, Math.floor((cam - wallTop) / 12)); i < walls.length; i++) {
+      const y = wallTop + i * 12 - cam;
+      if (y > h) break;
+      ctx.textAlign = 'left'; ctx.fillText(walls[i][0], 0, y);
+      ctx.textAlign = 'right'; ctx.fillText(walls[i][1], w, y);
     }
-    // Kelp: stems with stair-stepped leaflets, swaying more toward the tip.
+    ctx.textAlign = 'left';
+    // Kelp: "(|" and "|)" stacked, swaying more toward the tip.
     for (const k of kelp) {
-      const by = k.base - camA;
-      if (by - k.len > H || by < 0) continue;
-      ctx.fillStyle = k.back ? '#123d66' : '#0a2a4a';
-      const stem = k.back ? 1 : 2;
-      for (let i = 0; i < k.len; i++) {
-        const f = i / k.len, x = Math.round(k.x + Math.sin(t * .9 + k.phase + i * .045) * f * f * 6), y = Math.round(by - i);
-        ctx.fillRect(x, y, stem, 1);
-        if (i % 3 === 1 && i < k.len - 2) {
-          const leaf = Math.round(3 + (1 - f) * 5), dir = (i / 3 | 0) % 2 ? 1 : -1, x0 = dir > 0 ? x + stem - 1 : x;
-          for (let j = 1; j <= leaf; j++) ctx.fillRect(x0 + dir * j, y - Math.round(j * .6), 1, 2);
-        }
+      const size = k.back ? 15 : 20, lh = size * .7, by = k.base - cam;
+      if (by - k.rows * lh > h || by < -20) continue;
+      ctx.font = `${size}px ${FONT}`; ctx.fillStyle = k.back ? '#0d3256' : '#06192e';
+      for (let i = 0; i < k.rows; i++) {
+        const f = i / k.rows, x = k.x + Math.sin(t * .9 + k.phase + i * .18) * f * f * 14;
+        ctx.fillText(i === k.rows - 1 ? ' )' : i % 2 ? '(|' : ' |)', x, by - i * lh);
       }
     }
-    for (const [x, y, deep] of coral) { ctx.fillStyle = deep ? '#071328' : '#0b2a48'; ctx.fillRect(x, Math.round(y - camA), 2, 1); }
+    for (const [x, y, deep] of coral) art(CORAL, x, y - cam - CORAL.length * 14, deep ? '#1c3658' : '#081f38', 17, 14);
     // Fish.
     for (const f of fish) {
-      f.x += f.v * dt; if (f.x > W + 10) f.x = -10; if (f.x < -10) f.x = W + 10;
-      const x = Math.round(f.x), y = Math.round(f.y - camA);
-      if (y < -4 || y > H + 4) continue;
-      ctx.fillStyle = f.deep ? '#050c1a' : '#0b2744';
-      const tx = f.v > 0 ? x - 3 : x + 3;
-      ctx.fillRect(x - 2, y, 5, 2); ctx.fillRect(x - 1, y - 1, 3, 1); ctx.fillRect(tx, y - 1, 1, 4);
+      f.x += f.v * dt; if (f.x > w + 40) f.x = -40; if (f.x < -40) f.x = w + 40;
+      const y = f.y - cam;
+      if (y < -20 || y > h + 20) continue;
+      art([FISH[f.v > 0 ? 'r' : 'l'][f.big ? 1 : 0]], f.x, y, f.deep ? '#2a4466' : '#08213b', 15);
     }
     // Marine snow.
-    ctx.fillStyle = 'rgba(170,200,230,.35)';
-    for (const s of snow) { s.y += s.v * dt; const y = Math.round(s.y - camA); if (y >= 0 && y < H) ctx.fillRect(Math.round(s.x + Math.sin(t + s.y) * .6), y, 1, 1); }
+    ctx.font = `12px ${FONT}`; ctx.fillStyle = 'rgba(170,200,230,.4)';
+    for (const s of snow) { s.y += s.v * dt; const y = s.y - cam; if (y >= 0 && y < h) ctx.fillText('.', s.x + Math.sin(t + s.y) * 2, y); }
     // Ruler.
-    const rx = W - 3;
+    const rx = w - 9;
     ctx.fillStyle = 'rgba(125,147,184,.45)';
-    ctx.fillRect(rx, Math.max(0, Math.round(surf - camA)), 1, H);
+    ctx.fillRect(rx, Math.max(0, surf), 1, h);
     for (let m = 0; m <= 1400; m += 20) {
-      const y = Math.round(depthY(m) / P - camA);
-      if (y >= 0 && y < H) ctx.fillRect(rx - (m % 100 ? 2 : 4), y, m % 100 ? 2 : 4, 1);
+      const y = depthY(m) - cam;
+      if (y >= 0 && y < h) ctx.fillRect(rx - (m % 100 ? 6 : 12), Math.round(y), m % 100 ? 6 : 12, 1);
     }
     // Bubbles.
-    if (Math.random() < dt * 2.2) addBubble(rand(0, W), camA + H + 4, false);
-    ctx.fillStyle = 'rgba(190,220,245,.55)';
+    if (Math.random() < dt * 2.2) addBubble(rand(0, w), cam + h + 10, false);
+    ctx.font = `15px ${FONT}`; ctx.fillStyle = 'rgba(190,220,245,.6)';
     bubbles = bubbles.filter(b => {
-      b.y -= b.v * dt; const y = b.y - camA;
-      if (y < surf - camA || y < -6) return false;
-      ring(b.x + Math.sin(t * 3 + b.ph) * .8, y, b.r); return true;
+      b.y -= b.v * dt; const y = b.y - cam;
+      if (y < surf || y < -16) return false;
+      ctx.fillText(b.c, b.x + Math.sin(t * 3 + b.ph) * 2.5, y); return true;
     });
     // Krill: the mascot idles bottom-left, then joins the answer chip with its swarm.
     mascot.x += (mascot.tx - mascot.x) * Math.min(1, dt * 6); mascot.y += (mascot.ty - mascot.y) * Math.min(1, dt * 6);
     if (phase === 'card' || phase === 'chip') {
-      if (swarm) for (const s of swarm) {
-        const a = s.a + t * s.v, x = W / 2 + Math.cos(a) * s.rx, y = chipY / P + Math.sin(a) * s.ry;
-        ctx.fillStyle = '#ff5d8f'; ctx.fillRect(Math.round(x), Math.round(y), 2, 1); ctx.fillStyle = '#c23a66'; ctx.fillRect(Math.round(x) + (Math.cos(a) > 0 ? -1 : 2), Math.round(y) + 1, 1, 1);
+      if (swarm) {
+        ctx.font = `13px ${FONT}`; ctx.fillStyle = '#ff5d8f';
+        for (const s of swarm) {
+          const a = s.a + t * s.v;
+          ctx.fillText(Math.cos(a) * s.v > 0 ? '>' : '<', w / 2 + Math.cos(a) * s.rx, chipY + Math.sin(a) * s.ry - 6);
+        }
       }
-      drawSprite(KRILL, PINK, mascot.x, mascot.y + Math.sin(t * 2.4) * 1.5, swarm !== null);
+      art(swarm ? KRILL_R : KRILL_L, mascot.x, mascot.y + Math.sin(t * 2.4) * 4, '#ff5d8f', 16, 13);
     }
     // Lines light up as the answer sinks past them.
     if (chipShown) for (const el of tiers) el.classList.toggle('lit', el._y - cam < chipY + 4);
@@ -260,13 +242,13 @@
     // Submit: the button spends, bubbles burst up from below.
     at(s += 140, () => {
       diveBtn.classList.remove('press'); diveBtn.classList.add('spent');
-      for (let i = 0; i < 46; i++) addBubble(W / 2 + rand(-26, 26), cam / P + H + rand(0, 40), true);
+      for (let i = 0; i < 46; i++) addBubble(w / 2 + rand(-80, 80), cam + h + rand(0, 120), true);
     });
     // The answer lands in the water with its swarm; the lines appear.
     at(s += 650, () => {
       dive.classList.add('zap', 'chip-in'); chipShown = true; phase = 'chip';
-      swarm = Array.from({ length: 14 }, () => ({ a: rand(0, 7), v: rand(1.5, 3) * (Math.random() < .5 ? -1 : 1), rx: rand(16, 32), ry: rand(5, 12) }));
-      mascot.tx = W / 2 + 26; mascot.ty = chipY / P - 12;
+      swarm = Array.from({ length: 14 }, () => ({ a: rand(0, 7), v: rand(1.5, 3) * (Math.random() < .5 ? -1 : 1), rx: rand(50, 100), ry: rand(16, 36) }));
+      mascot.tx = w / 2 + 92; mascot.ty = chipY - 46;
     });
     at(s += 550, () => dive.classList.add('gone'));
     // Descent: the world scrolls up past the answer, which rocks in place.
@@ -289,6 +271,7 @@
 
   // ---------- Wiring ----------
   layout();
+  if (document.fonts) document.fonts.load(`16px ${FONT}`).then(() => { if (reduced) draw(performance.now()); });
   [mascot.x, mascot.y] = mascotIdle();
   addEventListener('resize', () => { const k = cam === camEnd; layout(); if (k || phase === 'done') cam = camEnd; if (reduced) { running = false; draw(performance.now()); } });
   const menuBtn = dive.querySelector('.menu-btn'), menu = dive.querySelector('.menu');
