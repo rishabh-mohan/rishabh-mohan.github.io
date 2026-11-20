@@ -14,6 +14,8 @@ const eyeHeadline = document.querySelector('.site-header h1');
 const eyeSchool = document.querySelector('.school');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const supported = matchMedia('(min-width: 900px) and (min-height: 640px) and (aspect-ratio > 5/4)');
+// ?view=krillion shows the mobile page instead; the grid, its keys and the scenery stay idle.
+const krillView = document.documentElement.classList.contains('krill-view');
 const order = projects.map((_, index) => index);
 let selected = null;
 let dragged = null;
@@ -300,7 +302,7 @@ function shuffleTo(theme) {
 }
 
 document.addEventListener('keydown', event => {
-  if (event.defaultPrevented || event.repeat || !supported.matches) return;
+  if (event.defaultPrevented || event.repeat || !supported.matches || krillView) return;
   if (openSlot !== null) {
     if (event.key === 'Escape') requestClose();
     return;
@@ -1072,7 +1074,7 @@ function cachedEdge(id, length, depth, originX, originY, width, height, ratio, p
 
 function drawForest(time) {
   updateScarf();
-  if (!supported.matches) return;
+  if (!supported.matches || krillView) return;
   const { left, top, right, bottom } = desk.getBoundingClientRect();
   const width = forest.clientWidth;
   const height = forest.clientHeight;

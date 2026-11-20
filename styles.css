@@ -269,6 +269,17 @@ nav, .toolbar, .motion { font-size: .82rem; }
   to { transform: translateY(0); }
 }
 #unsupported { display: none; max-width: 45ch; line-height: 1.6; color: var(--muted); }
+/* The mobile page; mobile.css shows it on small screens and in the krill view. */
+#mobile { display: none; }
+/* Krill view (?view=krillion): the mobile page on a desktop-sized screen. */
+html.krill-view, html.krill-view body { height: auto; overflow: visible; }
+html.krill-view #forest { display: none; }
+.krill-link { display: inline-block; line-height: 0; vertical-align: -6px; }
+.krill-link svg { width: 24px; height: 22px; fill: currentColor; shape-rendering: crispEdges; }
+.return-grid { display: none; }
+@media (min-width: 900px) and (min-height: 640px) and (min-aspect-ratio: 5/4) {
+  html.krill-view .return-grid { display: inline; }
+}
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 @media (max-width: 899px), (max-height: 639px), (max-aspect-ratio: 5/4) {
   #main { display: none; }

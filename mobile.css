@@ -1,9 +1,7 @@
 /* Small-screen site. Uses the same breakpoint styles.css uses to hide the desktop grid. */
 @font-face { font-family: "VT323"; src: url("assets/fonts/vt323-400.woff2") format("woff2"); font-display: swap; }
 
-#mobile { display: none; }
-
-@media (max-width: 899px), (max-height: 639px), (max-aspect-ratio: 5/4) {
+/* Loaded only on small screens (media attribute in index.html), or anywhere with ?view=krillion. */
   :root {
     --m-bg: #050a14; --m-panel: #0d1830; --m-panel2: #10203d;
     --m-text: #e8f1ff; --m-muted: #7d93b8; --m-muted2: #a8bad2;
@@ -256,7 +254,6 @@
   .floor-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
   .surface { display: inline-block; font-size: 18px; letter-spacing: 2px; color: var(--m-pink) !important; text-decoration: none; padding: 6px; }
   .floor-credit { margin: 10px 0 0; font-size: 14px; }
-}
 
 @keyframes m-blink { 50% { opacity: 0; } }
 @keyframes m-card-in { from { opacity: 0; transform: translateY(46px) scale(.92); } }

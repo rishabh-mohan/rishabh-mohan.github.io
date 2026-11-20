@@ -555,5 +555,6 @@
   let seen = false;
   try { seen = sessionStorage.getItem('dove') === '1'; sessionStorage.setItem('dove', '1'); } catch {}
   if (frozen) { cam = camEnd; return; }
-  if (small && !seen) play();
+  // The krill link on desktop asks for the dive, so it always plays there.
+  if ((small && !seen) || document.documentElement.classList.contains('krill-view')) play();
 })();
