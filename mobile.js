@@ -57,7 +57,8 @@ const posts = [];
     return el('li', {}, el('p', { className: 'role', textContent: title }), el('p', { className: 'org', textContent: rest.join(' · ') }));
   });
   // "Name (what it is), ..." -> a list with the description dimmed.
-  const builds = resume[3].replace(/\.$/, '').split(/, (?:and )?/).map(item => {
+  const builds = resume[3].replace(/\.$/, '').split(/, (?:and )?/)
+    .filter(item => !/^(?:d31|rr-scraper) \(/.test(item)).map(item => {
     const [, name, what] = /^(.+?) \((.+)\)$/.exec(item) || [, item, ''];
     return el('li', {}, el('span', { className: 'role', textContent: name }), what ? el('span', { className: 'org', textContent: ` ${what}` }) : '');
   });
