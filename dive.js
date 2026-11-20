@@ -21,27 +21,98 @@
   const clamp = v => v < 0 ? 0 : v > 1 ? 1 : v;
   const smooth = (a, b, x) => { const k = clamp((x - a) / (b - a)); return k * k * (3 - 2 * k); };
 
-  // ---------- Sprites ----------
-  const KRILL = [
-    '`.',
-    "  `.  _.-''''-._",
-    '----(@ ):):):):)`-.',
-    '    `/,/,/,/,`-.  `\\',
-    "               `=-<'",
-  ];
-  const FLIP = { '(': ')', ')': '(', '/': '\\', '\\': '/', '<': '>', '>': '<', '`': "'", "'": '`' };
-  const mirror = lines => { const n = Math.max(...lines.map(l => l.length)); return lines.map(l => [...l.padEnd(n)].reverse().map(c => FLIP[c] || c).join('')); };
-  const KRILL_R = mirror(KRILL);
-  const PINK = ['#ffd6e2', '#ffa3c0', '#ff5d8f', '#c23a66', '#7d1d3c'];
-  const GOLD = ['#fff4c2', '#ffe08a', '#ffd166', '#d9a032', '#a06c18'];
-  const FISH = { r: [['><>'], ['  ,/', "><((((°>", "  `\\"]], l: [['<><'], ['  \\.', "<°))))><", "  /'"]] };
-  const shadeRow = (pal, i, n) => pal[Math.min(pal.length - 1, Math.round(i / Math.max(1, n - 1) * (pal.length - 1)))];
-  const sprite = (lines, x, y, pal, size = 11) => {
-    ctx.font = `600 ${size}px ${SPRITE}`;
-    lines.forEach((line, i) => { ctx.fillStyle = shadeRow(pal, i, lines.length); ctx.fillText(line, x, y + i * size * 1.05); });
+  // ---------- Filled shapes ----------
+  // Creatures and props are built from ellipses (and boxes), filled on a fine glyph grid: each cell is lit like a
+  // little sphere (light from the upper left), backed by the shape's darkest tone so it reads as solid, and drawn
+  // with a density glyph. Details (eyes, antennae, legs) go on top as plain characters.
+  const FILL_RAMP = ' .:-=+*#'; // calm: the backing tone carries the shape, glyphs add shading
+  const LIGHT = [-.45, -.7, .55];
+  const PINK = ['#5c1530', '#8f2348', '#d23e70', '#ff6f9c', '#ffc6d8'];
+  const GOLD = ['#5e3c0a', '#9a6a18', '#e0a838', '#ffd166', '#fff1b8'];
+  // prims: [{ x, y, rx, ry, rot?, box? , bias? }] in css px relative to (ox, oy); flip mirrors x.
+  const solid = (g, prims, ox, oy, tones, { flip = false, fx = 3.6, fy = 5, font = 6 } = {}) => {
+    const cells = new Map();
+    for (const p of prims) {
+      const px = flip ? -p.x : p.x, rot = (flip ? -1 : 1) * (p.rot || 0), c = Math.cos(rot), s = Math.sin(rot), R = Math.max(p.rx, p.ry);
+      const i0 = Math.floor((ox + px - R) / fx), i1 = Math.ceil((ox + px + R) / fx), j0 = Math.floor((oy + p.y - R) / fy), j1 = Math.ceil((oy + p.y + R) / fy);
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const dx = i * fx - ox - px, dy = j * fy - oy - p.y, lx = (dx * c + dy * s) / p.rx, ly = (-dx * s + dy * c) / p.ry;
+        let v;
+        if (p.box) {
+          if (Math.abs(lx) > 1 || Math.abs(ly) > 1) continue;
+          v = .78 - ly * .3 - lx * .12;
+        } else {
+          const q = lx * lx + ly * ly;
+          if (q > 1) continue;
+          const nz = Math.sqrt(1 - q);
+          v = .12 + .88 * Math.max(0, (flip ? -lx : lx) * LIGHT[0] * c + ly * LIGHT[1] + nz * LIGHT[2]);
+        }
+        cells.set(j * 100000 + i, clamp(v + (p.bias || 0)));
+      }
+    }
+    g.font = `700 ${font}px ${SPRITE}`;
+    g.fillStyle = tones[0];
+    for (const k of cells.keys()) { const j = Math.floor(k / 100000), i = k - j * 100000; g.fillRect(i * fx - fx / 2, j * fy - fy / 2, fx + .4, fy + .4); }
+    for (const [k, v] of cells) {
+      const j = Math.floor(k / 100000), i = k - j * 100000;
+      g.fillStyle = tones[1 + Math.round(v * 3)];
+      g.fillText(FILL_RAMP[1 + Math.round(v * (FILL_RAMP.length - 2))], i * fx - fx / 2, j * fy - fy / 2);
+    }
   };
-  // Gold badge for the result: the same krill, shaded the same way.
-  dive.querySelector('.badge').innerHTML = KRILL.map((line, i) => `<span style="color:${shadeRow(GOLD, i, KRILL.length)}">${line.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>`).join('\n');
+  const marks = (g, list, ox, oy, flip, size = 9) => {
+    g.font = `700 ${size}px ${SPRITE}`;
+    for (const [x, y, ch, color] of list) { g.fillStyle = color; g.fillText(flip ? (FLIP[ch] || ch) : ch, ox + (flip ? -x : x) - size * .3, oy + y - size * .5); }
+  };
+  const FLIP = { '(': ')', ')': '(', '/': '\\', '\\': '/', '<': '>', '>': '<', '`': "'", "'": '`' };
+
+  // Krill, facing left: carapace, five tapering abdomen segments and a fan tail, curving gently down.
+  const KRILL_BODY = [
+    { x: 4, y: 0, rx: 5, ry: 2.4, rot: -.15 },
+    { x: 15, y: -1, rx: 12, ry: 7.5, rot: .04 },
+    { x: 28, y: 0, rx: 8.5, ry: 6.6, rot: .1 },
+    { x: 37, y: 1.5, rx: 7.5, ry: 6, rot: .18 },
+    { x: 45, y: 3.5, rx: 6.5, ry: 5.2, rot: .28 },
+    { x: 52, y: 6, rx: 5.5, ry: 4.4, rot: .4 },
+    { x: 57, y: 9.5, rx: 4.6, ry: 3.6, rot: .6 },
+    { x: 61, y: 14, rx: 6, ry: 2.6, rot: 1.05, bias: .1 },
+    { x: 57, y: 15, rx: 5, ry: 2.2, rot: .2, bias: .05 },
+  ];
+  const krillMarks = (tones, eye) => [
+    [7, -2, '@', eye],
+    ...[22.5, 32.5, 41.5, 49].map((x, i) => [x, -5 + i * 1.6, ')', tones[1]]),
+    ...[10, 16, 22, 28, 34].map(x => [x, 8.5, '/', tones[2]]),
+    ...[[-3, -3], [-8, -6], [-13, -9], [-18, -12], [-23, -15], [-28, -17]].map(([x, y]) => [x, y, '`', tones[3]]),
+    ...[[-4, 1], [-9, 1], [-14, 0]].map(([x, y]) => [x, y, '-', tones[2]]),
+  ];
+  const drawKrill = (g, x, y, tones, flip, eye = '#14040c', k = 1) => {
+    solid(g, KRILL_BODY.map(p => ({ ...p, x: p.x * k, y: p.y * k, rx: p.rx * k, ry: p.ry * k })), x, y, tones, { flip, fx: 3.6, fy: 4.8, font: 6 });
+    marks(g, krillMarks(tones, eye).map(([mx, my, ch, c]) => [mx * k, my * k, ch, c]), x, y, flip, Math.round(8 * k));
+  };
+  // The result badge: the same krill in gold, drawn once into its own canvas (2x for crisp glyphs).
+  const badge = document.createElement('canvas');
+  badge.width = 300; badge.height = 120; badge.style.width = '150px'; badge.style.height = '60px';
+  dive.querySelector('.badge').replaceChildren(badge);
+  const drawBadge = () => {
+    const g = badge.getContext('2d'); g.setTransform(2, 0, 0, 2, 0, 0); g.clearRect(0, 0, 150, 60); g.textBaseline = 'top';
+    drawKrill(g, 50, 30, GOLD, false, '#2a1800', 1.55);
+  };
+
+  // Fish: body, tail and a fin; small and big.
+  const FISH_BODY = s => [
+    { x: 0, y: 0, rx: 10 * s, ry: 5 * s },
+    { x: -11 * s, y: -2.4 * s, rx: 4.5 * s, ry: 2 * s, rot: .6, bias: -.05 },
+    { x: -11 * s, y: 2.4 * s, rx: 4.5 * s, ry: 2 * s, rot: -.6, bias: -.1 },
+    { x: 1 * s, y: -5 * s, rx: 4 * s, ry: 1.6 * s, rot: -.3 },
+  ];
+  // Boat: stepped hull, cabin with portholes, mast.
+  const BOAT = [
+    { x: 30, y: 6, rx: 30, ry: 3.4, box: true },
+    { x: 30, y: 11, rx: 26, ry: 2.6, box: true, bias: -.15 },
+    { x: 30, y: 15, rx: 21, ry: 2, box: true, bias: -.3 },
+    { x: 30, y: -2, rx: 12, ry: 5, box: true, bias: .05 },
+    { x: 30, y: -16, rx: 1.2, ry: 10, box: true },
+  ];
+  const BOAT_TONES = ['#070f1d', '#13223a', '#22385a', '#365480', '#5579a6'];
 
   // ---------- Shaded rock ----------
   // Same idea as the desktop scenery: each cell gets a light value, drawn as a glyph from a density ramp in one of
@@ -91,7 +162,7 @@
     }));
     kelp = Array.from({ length: 16 }, (_, i) => {
       const side = i % 2, x = side ? rand(w * .7, w - 10) : rand(8, w * .34), far = i % 3 === 0;
-      return { side, x, base: ledgeTop(side, x) + 8, len: rand(far ? 150 : 110, far ? 260 : 220), far, phase: rand(0, 6), segs: 26 };
+      return { side, x, base: ledgeTop(side, x) + 8, len: rand(far ? 150 : 110, far ? 260 : 220), far, phase: rand(0, 6), segs: 17 };
     }).sort((a, b) => b.far - a.far);
     coral = [[w * .22, 0], [w * .84, 1], [w * .1, 0], [w * .93, 1]].map(([x, side], i) => ({ x, base: ledgeTop(side, x) + 6, size: i > 1 ? 22 : 30, seed: rand(0, 9) }));
     fish = Array.from({ length: 9 }, (_, i) => ({ x: rand(0, w), y: i < 6 ? depthY(rand(25, 330)) : depthY(rand(560, 1150)), v: rand(12, 34) * (i % 2 ? 1 : -1), big: Math.random() < .4, deep: i >= 6 }));
@@ -155,52 +226,38 @@
     }
   };
 
-  // Kelp and coral are drawn as line glyphs that follow their shape, so they sway smoothly instead of snapping to cells.
-  const slant = (dx, dy) => { const a = Math.atan2(dx, -dy); return a > .32 ? '/' : a < -.32 ? '\\' : '|'; };
-  // Tones per kelp layer: shadow, body, lit edge, highlight.
-  const KELP_PAL = { far: ['#123b5e', '#1b4d74', '#26618a', '#35779f'], near: ['#061c30', '#0f3150', '#1c4a6e', '#2d6589'] };
+  // Kelp and coral are filled shapes rebuilt each frame, so they sway smoothly.
+  // Kelp: a filled tube stalk with filled leaf blades, swaying more toward the tip.
+  const KELP_TONES = { far: ['#103250', '#174263', '#1e5174', '#286387', '#35779a'], near: ['#05182a', '#0b2539', '#123349', '#1a435c', '#245570'] };
   const drawKelp = k => {
     if (k.base - k.len > cam + h || k.base < cam - 40) return;
-    const pal = KELP_PAL[k.far ? 'far' : 'near'], size = k.far ? 11 : 13, step = k.len / k.segs, cw = size * .6;
-    ctx.font = `600 ${size}px ${SPRITE}`;
-    let x = k.x, y = k.base;
+    const step = k.len / k.segs, prims = [], thick = k.far ? 3.8 : 5;
+    let x = k.x, y = k.base - cam;
     for (let s = 0; s < k.segs; s++) {
-      const f = s / k.segs, thick = f < .75;
+      const f = s / k.segs;
       const ang = Math.sin(t * 1.1 + k.phase + f * 2.2) * .17 * (.25 + f) + Math.sin(t * .5 + k.phase) * .05;
-      const nx = x + Math.sin(ang) * step, ny = y - Math.cos(ang) * step, sy = ny - cam;
-      const g = slant(nx - x, ny - y);
-      // Stalk as a tube: lit left rim, body, shaded right rim.
-      if (thick) { ctx.fillStyle = pal[2]; ctx.fillText('(', nx - cw * 1.4, sy); }
-      ctx.fillStyle = pal[thick ? 1 : 2]; ctx.fillText(g, nx - cw * .5, sy);
-      if (thick) { ctx.fillStyle = pal[0]; ctx.fillText(')', nx + cw * .4, sy); }
-      // Blades every few segments, alternating sides: a lit upper edge over a shaded underside, curling up and out.
-      if (s % 3 === 1 && s < k.segs - 2) {
-        const dir = (s / 3 | 0) % 2 ? 1 : -1, n = Math.round((k.far ? 4 : 5) * (1 - f * .4));
-        for (let b = 1; b <= n; b++) {
-          const bx = nx + dir * (b * cw + cw * .3) + Math.sin(ang) * b * 3, by = sy - b * size * .3 + (b * b) * .25;
-          const edge = b === n ? (dir > 0 ? "'" : '`') : dir > 0 ? '/' : '\\';
-          ctx.fillStyle = pal[0]; ctx.fillText(b === n ? '.' : '~', bx, by + size * .35);
-          ctx.fillStyle = pal[dir < 0 ? 3 : 2]; ctx.fillText(edge, bx, by);
-        }
+      x += Math.sin(ang) * step; y -= Math.cos(ang) * step;
+      prims.push({ x, y, rx: thick * (1 - f * .45), ry: step * .8, rot: ang });
+      if (s % 2 === 1 && s < k.segs - 1) {
+        const dir = (s / 2 | 0) % 2 ? 1 : -1, len = (k.far ? 10 : 13) * (1 - f * .35), tilt = ang + dir * 1.05;
+        prims.push({ x: x + Math.sin(tilt) * len * .9, y: y - Math.cos(tilt) * len * .9, rx: k.far ? 3.6 : 4.4, ry: len, rot: tilt, bias: dir > 0 ? -.08 : .06 });
       }
-      x = nx; y = ny;
     }
-    ctx.fillStyle = pal[3]; ctx.fillText('*', x - cw * .5, y - cam - size * .5);
+    solid(ctx, prims, 0, 0, KELP_TONES[k.far ? 'far' : 'near'], { fx: 3.4, fy: 4.6, font: 6 });
   };
+  const CORAL_TONES = ['#3e1230', '#6e2350', '#a83a6e', '#dc5d8d', '#ffa6c3'];
   const drawCoral = c => {
     if (c.base < cam - 60 || c.base - 80 > cam + h) return;
-    ctx.font = `600 11px ${SPRITE}`;
+    const prims = [];
     const branch = (x, y, ang, len, d) => {
       const sway = Math.sin(t * .8 + c.seed + d) * .05, dx = Math.cos(ang + sway), dy = -Math.sin(ang + sway);
-      ctx.fillStyle = ['#7c2f5c', '#a33d70', '#cc5585', '#ef7fa4'][3 - d];
-      for (let s = 0; s < len; s += 7) ctx.fillText(slant(dx, dy), x + dx * s - 3, y + dy * s - cam - 6);
+      for (let s = 0; s <= len; s += 3) prims.push({ x: x + dx * s, y: y + dy * s, rx: 2.2 + d * .8, ry: 2.2 + d * .8 });
       const ex = x + dx * len, ey = y + dy * len;
-      if (d > 0) {
-        ctx.fillStyle = '#cc5585'; ctx.fillText('Y', ex - 3, ey - cam - 6);
-        for (const turn of [-.6, .55]) branch(ex, ey, ang + turn + Math.sin(c.seed * (d + 1)) * .2, len * .68, d - 1);
-      } else { ctx.fillStyle = '#ffb3cb'; ctx.fillText('o', ex - 3, ey - cam - 7); }
+      if (d > 0) for (const turn of [-.6, .55]) branch(ex, ey, ang + turn + Math.sin(c.seed * (d + 1)) * .2, len * .68, d - 1);
+      else prims.push({ x: ex, y: ey, rx: 3.6, ry: 3.6, bias: .2 });
     };
-    branch(c.x, c.base, Math.PI / 2, c.size * .6, 3);
+    branch(c.x, c.base - cam, Math.PI / 2, c.size * .6, 3);
+    solid(ctx, prims, 0, 0, CORAL_TONES, { fx: 3.2, fy: 4.4, font: 6 });
   };
 
   // Sky: clouds and sun sampled on a fine local grid so their soft edges and shading survive.
@@ -244,11 +301,13 @@
     }
     // Boat, shaded top to bottom, with a pink pennant.
     const bx = w * .14, by = SURF - 38 + Math.sin(t * 2) * 1.5 - cam;
-    sprite(['         |', '     ____|____', "  __|_[]_[]_[]|__", '  \\ = = = = = = /', "   `~~~~~~~~~~~'"], bx, by, ['#2a4268', '#1c3052', '#132440', '#0b1830', '#2c6d9c'], 9);
-    ctx.font = `600 9px ${SPRITE}`; ctx.fillStyle = '#ff5d8f'; ctx.fillText('>', bx + 9 * .6 * 10, by - 1);
+    solid(ctx, BOAT, bx, by + 22, BOAT_TONES, { fx: 3.4, fy: 4.4 });
+    marks(ctx, [[22, -2, 'o', '#e8f1ff'], [30, -2, 'o', '#e8f1ff'], [38, -2, 'o', '#e8f1ff'], [34, -25, '>', '#ff5d8f'], [36, -25, '>', '#ff5d8f']], bx, by + 22, false);
   };
 
   const draw = now => {
+    // About 30 fps: plenty for ASCII, and half the glyph work. Labels move with the canvas, so they stay in step.
+    if (now - last < 30 && last) { if (running) requestAnimationFrame(draw); return; }
     const dt = Math.min(.05, (now - last) / 1000 || 0); last = now; t += dt;
     if (tween) {
       const k = Math.min(1, (now - tween.start) / tween.dur), e = k < .5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
@@ -299,8 +358,9 @@
       f.x += f.v * dt; if (f.x > w + 50) f.x = -50; if (f.x < -50) f.x = w + 50;
       const y = f.y - cam;
       if (y < -30 || y > h + 30) continue;
-      const pal = f.deep ? ['#3a5578', '#2a4466', '#1c3352'] : ['#2d6390', '#16446c', '#0a2a48'];
-      sprite(FISH[f.v > 0 ? 'r' : 'l'][f.big ? 1 : 0], f.x, y, pal, f.big ? 10 : 12);
+      const tones = f.deep ? ['#0b1a30', '#1a2f4d', '#2a4466', '#3d5b82', '#5677a0'] : ['#06203a', '#0c2f50', '#164468', '#245b84', '#3a78a2'];
+      solid(ctx, FISH_BODY(f.big ? 1.15 : .75), f.x, y, tones, { flip: f.v < 0, fx: 3.2, fy: 4.2, font: 5.5 });
+      marks(ctx, [[6.5 * (f.big ? 1.15 : .75), -1.5, '.', '#e8f1ff']], f.x, y, f.v < 0, 8);
     }
     // Marine snow.
     ctx.font = `10px ${SPRITE}`; ctx.fillStyle = 'rgba(170,200,230,.4)';
@@ -332,7 +392,7 @@
           ctx.fillText(right ? '~)>' : '<(~', w / 2 + Math.cos(a) * s.rx - 8, chipY + Math.sin(a) * s.ry - 6);
         }
       }
-      sprite(swarm ? KRILL_R : KRILL, mascot.x, mascot.y + Math.sin(t * 2.4) * 4, PINK, 10);
+      drawKrill(ctx, mascot.x + 40, mascot.y + 26 + Math.sin(t * 2.4) * 4, PINK, swarm !== null, '#14040c', 1.4);
     }
     // Lines light up as the answer sinks past them.
     if (chipShown) for (const el of tiers) el.classList.toggle('lit', el._y - cam < chipY + 4);
@@ -411,7 +471,8 @@
 
   // ---------- Wiring ----------
   layout();
-  if (document.fonts) document.fonts.load(FONT).then(() => { layout(); if (phase === 'done') cam = camEnd; if (reduced) draw(performance.now()); });
+  drawBadge();
+  if (document.fonts) document.fonts.load(FONT).then(() => { layout(); drawBadge(); if (phase === 'done') cam = camEnd; if (reduced) draw(performance.now()); });
   [mascot.x, mascot.y] = mascotIdle();
   addEventListener('resize', () => { const k = cam === camEnd; layout(); if (k || phase === 'done') cam = camEnd; if (reduced) { running = false; draw(performance.now()); } });
   const menuBtn = dive.querySelector('.menu-btn'), menu = dive.querySelector('.menu');
